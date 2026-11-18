@@ -33,6 +33,26 @@ Antes de tocar un servicio, leé **su** `AGENTS.md` (`ms-catedra/`, `ms-document
 8. Una historia toca un solo microservicio (salvo la inicialización). Si necesitás algo de otro servicio, usá su contrato de `docs/06`; no edites su código.
 9. Al terminar: listá archivos creados/modificados y cómo probarlo a mano (curl o Postman).
 
+## Reglas de comentarios y documentación del código (IMPORTANTE)
+
+El código debe ser fácil de entender y defender oralmente por cualquier integrante del equipo, incluso si no fue quien lo implementó.
+
+1. Escribí comentarios en español, utilizando lenguaje natural, claro y sencillo. Evitá explicaciones excesivamente técnicas cuando puedan expresarse de manera más simple.
+2. Comentá las clases y métodos importantes explicando:
+   - Qué responsabilidad tienen.
+   - Qué problema resuelven.
+   - Cómo funcionan internamente cuando no resulta evidente.
+   - Por qué se tomó esa decisión de implementación cuando sea relevante.
+3. En las partes que involucren conceptos importantes de Java, Spring Boot, arquitectura, patrones de diseño, seguridad, persistencia o reglas de negocio, agregá comentarios que ayuden a comprender qué está sucediendo y por qué.
+4. Cuando se utilicen anotaciones de Spring (`@Service`, `@Transactional`, `@RestController`, `@PreAuthorize`, etc.), explicá su propósito cuando su función o impacto no resulte evidente.
+5. Cuando se implementen patrones de diseño o principios SOLID, indicá brevemente dónde se aplican y qué beneficio aportan.
+6. En métodos con lógica no trivial, explicá los pasos principales del procedimiento y el motivo de las decisiones importantes.
+7. No comentes cosas obvias que ya se entienden leyendo el código. Evitá comentarios redundantes o que simplemente repitan la instrucción siguiente.
+8. Mantené los comentarios actualizados cuando modifiques el código. Nunca dejes comentarios que describan un comportamiento que ya no existe.
+9. Priorizá comentarios que ayuden a responder preguntas típicas de una defensa oral: ¿qué hace?, ¿por qué se implementó así?, ¿qué responsabilidad tiene esta clase?, ¿qué pasaría si se hiciera de otra manera?
+
+**Objetivo:** que los comentarios sirvan como material de estudio para el equipo y permitan explicar y justificar las decisiones de implementación durante la exposición del TPI.
+
 ## Reglas de arquitectura (no negociables)
 - Un servicio = un esquema de PostgreSQL. Sin claves foráneas entre esquemas. Nunca compartir entidades, repositorios ni DTO entre servicios: se habla por HTTP.
 - Capas: `controller` → `service` → `repository`. Las entidades JPA nunca salen por la API: se devuelven `record` DTO con mapeo manual.
