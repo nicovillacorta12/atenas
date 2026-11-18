@@ -67,6 +67,22 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/catedra/mi-perfil").hasRole(ALUMNO)
                         .requestMatchers(HttpMethod.PUT, "/api/catedra/mi-perfil/usuario-github").hasRole(ALUMNO)
 
+                        // Equipos: docente asignado crea; jefe/docente/alumno consultan; alumno ingresa.
+                        .requestMatchers(HttpMethod.POST, "/api/catedra/comisiones-lectivas/*/equipos")
+                        .hasRole(DOCENTE)
+                        .requestMatchers(HttpMethod.GET, "/api/catedra/comisiones-lectivas/*/equipos")
+                        .hasAnyRole(JEFE_CATEDRA, DOCENTE, ALUMNO)
+                        .requestMatchers(HttpMethod.GET, "/api/catedra/equipos/*")
+                        .hasAnyRole(JEFE_CATEDRA, DOCENTE, ALUMNO)
+                        .requestMatchers(HttpMethod.POST, "/api/catedra/equipos/*/integrantes")
+                        .hasRole(ALUMNO)
+                        .requestMatchers(HttpMethod.DELETE, "/api/catedra/equipos/*/integrantes/*")
+                        .hasRole(ALUMNO)
+                        .requestMatchers(HttpMethod.PATCH, "/api/catedra/equipos/*/aseguramiento")
+                        .hasAnyRole(ALUMNO, DOCENTE)
+                        .requestMatchers(HttpMethod.PATCH, "/api/catedra/equipos/*/reapertura")
+                        .hasRole(DOCENTE)
+
                         // Los contratos internos exigen JWT, pero no un rol público.
                         .requestMatchers("/internal/**").authenticated()
 

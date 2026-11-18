@@ -890,7 +890,7 @@
     },
     {
       "name": "02 Equipos",
-      "description": "Creación de equipos, ingreso y salida de integrantes, aseguramiento y reapertura. Se completa al implementar F04 y F05.",
+      "description": "Creación, consulta e ingreso a equipos (F04 parte 1). Salida, aseguramiento y reapertura quedan para F04 parte 2.",
       "auth": {
         "type": "oauth2",
         "oauth2": [
@@ -941,7 +941,573 @@
           }
         ]
       },
-      "item": []
+      "item": [
+        {
+          "name": "C16 Crear equipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C16 responde 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('C16 devuelve Location', function () {",
+                  "    pm.response.to.have.header('Location');",
+                  "});",
+                  "pm.test('C16 guarda equipoId', function () {",
+                  "    pm.environment.set('equipoId', pm.response.json().id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "auth": {
+            "type": "oauth2",
+            "oauth2": [
+              {
+                "key": "grant_type",
+                "value": "authorization_code",
+                "type": "string"
+              },
+              {
+                "key": "authUrl",
+                "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth",
+                "type": "string"
+              },
+              {
+                "key": "accessTokenUrl",
+                "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+                "type": "string"
+              },
+              {
+                "key": "clientId",
+                "value": "{{clientId}}",
+                "type": "string"
+              },
+              {
+                "key": "redirect_uri",
+                "value": "https://oauth.pstmn.io/v1/callback",
+                "type": "string"
+              },
+              {
+                "key": "scope",
+                "value": "openid profile email",
+                "type": "string"
+              },
+              {
+                "key": "tokenName",
+                "value": "token-docente-a",
+                "type": "string"
+              },
+              {
+                "key": "addTokenTo",
+                "value": "header",
+                "type": "string"
+              },
+              {
+                "key": "client_authentication",
+                "value": "send_client_credentials_in_body",
+                "type": "string"
+              }
+            ]
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Equipo 1\",\n  \"cupoMinimo\": 2,\n  \"cupoMaximo\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/comisiones-lectivas/{{comisionLectivaId}}/equipos",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "comisiones-lectivas",
+                "{{comisionLectivaId}}",
+                "equipos"
+              ]
+            },
+            "description": "Crea un equipo ABIERTO en la comisión. Requiere token de un docente asignado a la comisión."
+          }
+        },
+        {
+          "name": "C17 Listar equipos de la comisión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C17 responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('C17 devuelve una lista', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/comisiones-lectivas/{{comisionLectivaId}}/equipos",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "comisiones-lectivas",
+                "{{comisionLectivaId}}",
+                "equipos"
+              ]
+            },
+            "description": "Lista equipos y disponibilidad. Usa el token de jefe."
+          }
+        },
+        {
+          "name": "C18 Consultar equipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C18 responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('C18 devuelve el equipo', function () {",
+                  "    pm.expect(pm.response.json().id).to.eql(Number(pm.environment.get('equipoId')));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/equipos/{{equipoId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "equipos",
+                "{{equipoId}}"
+              ]
+            },
+            "description": "Consulta el equipo con integrantes y representante. Usa el token de jefe."
+          }
+        },
+        {
+          "name": "C19 Ingresar al equipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C19 responde 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('C19 registra al menos un integrante', function () {",
+                  "    pm.expect(pm.response.json().cantidadIntegrantes).to.be.at.least(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "auth": {
+            "type": "oauth2",
+            "oauth2": [
+              {
+                "key": "grant_type",
+                "value": "authorization_code",
+                "type": "string"
+              },
+              {
+                "key": "authUrl",
+                "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth",
+                "type": "string"
+              },
+              {
+                "key": "accessTokenUrl",
+                "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+                "type": "string"
+              },
+              {
+                "key": "clientId",
+                "value": "{{clientId}}",
+                "type": "string"
+              },
+              {
+                "key": "redirect_uri",
+                "value": "https://oauth.pstmn.io/v1/callback",
+                "type": "string"
+              },
+              {
+                "key": "scope",
+                "value": "openid profile email",
+                "type": "string"
+              },
+              {
+                "key": "tokenName",
+                "value": "token-alumno-b",
+                "type": "string"
+              },
+              {
+                "key": "addTokenTo",
+                "value": "header",
+                "type": "string"
+              },
+              {
+                "key": "client_authentication",
+                "value": "send_client_credentials_in_body",
+                "type": "string"
+              }
+            ]
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/equipos/{{equipoId}}/integrantes",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "equipos",
+                "{{equipoId}}",
+                "integrantes"
+              ]
+            },
+            "description": "Ingresa al equipo con la identidad del alumno autenticado. Requiere token-alumno-b."
+          }
+        },
+        {
+          "name": "C20 Salir del equipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C20 responde 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "auth": {
+            "type": "oauth2",
+            "oauth2": [
+              {
+                "key": "grant_type",
+                "value": "authorization_code",
+                "type": "string"
+              },
+              {
+                "key": "authUrl",
+                "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth",
+                "type": "string"
+              },
+              {
+                "key": "accessTokenUrl",
+                "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+                "type": "string"
+              },
+              {
+                "key": "clientId",
+                "value": "{{clientId}}",
+                "type": "string"
+              },
+              {
+                "key": "redirect_uri",
+                "value": "https://oauth.pstmn.io/v1/callback",
+                "type": "string"
+              },
+              {
+                "key": "scope",
+                "value": "openid profile email",
+                "type": "string"
+              },
+              {
+                "key": "tokenName",
+                "value": "token-alumno-b",
+                "type": "string"
+              },
+              {
+                "key": "addTokenTo",
+                "value": "header",
+                "type": "string"
+              },
+              {
+                "key": "client_authentication",
+                "value": "send_client_credentials_in_body",
+                "type": "string"
+              }
+            ]
+          },
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/equipos/{{equipoId}}/integrantes/{{estudianteId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "equipos",
+                "{{equipoId}}",
+                "integrantes",
+                "{{estudianteId}}"
+              ]
+            },
+            "description": "Sale del equipo con la identidad del alumno autenticado o rechaza a otro integrante si es representante."
+          }
+        },
+        {
+          "name": "C21 Asegurar equipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C21 responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('C21 deja el equipo asegurado', function () {",
+                  "    pm.expect(pm.response.json().asegurado).to.eql(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "auth": {
+            "type": "oauth2",
+            "oauth2": [
+              {
+                "key": "grant_type",
+                "value": "authorization_code",
+                "type": "string"
+              },
+              {
+                "key": "authUrl",
+                "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth",
+                "type": "string"
+              },
+              {
+                "key": "accessTokenUrl",
+                "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+                "type": "string"
+              },
+              {
+                "key": "clientId",
+                "value": "{{clientId}}",
+                "type": "string"
+              },
+              {
+                "key": "redirect_uri",
+                "value": "https://oauth.pstmn.io/v1/callback",
+                "type": "string"
+              },
+              {
+                "key": "scope",
+                "value": "openid profile email",
+                "type": "string"
+              },
+              {
+                "key": "tokenName",
+                "value": "token-docente-a",
+                "type": "string"
+              },
+              {
+                "key": "addTokenTo",
+                "value": "header",
+                "type": "string"
+              },
+              {
+                "key": "client_authentication",
+                "value": "send_client_credentials_in_body",
+                "type": "string"
+              }
+            ]
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/equipos/{{equipoId}}/aseguramiento",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "equipos",
+                "{{equipoId}}",
+                "aseguramiento"
+              ]
+            },
+            "description": "Asegura el equipo. Con token de docente asignado no requiere condiciones adicionales."
+          }
+        },
+        {
+          "name": "C22 Reabrir equipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C22 responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('C22 deja el equipo abierto', function () {",
+                  "    pm.expect(pm.response.json().asegurado).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "auth": {
+            "type": "oauth2",
+            "oauth2": [
+              {
+                "key": "grant_type",
+                "value": "authorization_code",
+                "type": "string"
+              },
+              {
+                "key": "authUrl",
+                "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth",
+                "type": "string"
+              },
+              {
+                "key": "accessTokenUrl",
+                "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+                "type": "string"
+              },
+              {
+                "key": "clientId",
+                "value": "{{clientId}}",
+                "type": "string"
+              },
+              {
+                "key": "redirect_uri",
+                "value": "https://oauth.pstmn.io/v1/callback",
+                "type": "string"
+              },
+              {
+                "key": "scope",
+                "value": "openid profile email",
+                "type": "string"
+              },
+              {
+                "key": "tokenName",
+                "value": "token-docente-a",
+                "type": "string"
+              },
+              {
+                "key": "addTokenTo",
+                "value": "header",
+                "type": "string"
+              },
+              {
+                "key": "client_authentication",
+                "value": "send_client_credentials_in_body",
+                "type": "string"
+              }
+            ]
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/equipos/{{equipoId}}/reapertura",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "equipos",
+                "{{equipoId}}",
+                "reapertura"
+              ]
+            },
+            "description": "Reabre el equipo asegurado. Solo un docente asignado puede hacerlo."
+          }
+        }
+      ]
     },
     {
       "name": "03 Calendario y repositorio",

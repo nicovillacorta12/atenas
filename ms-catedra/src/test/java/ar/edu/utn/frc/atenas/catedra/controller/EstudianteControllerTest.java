@@ -3,6 +3,7 @@ package ar.edu.utn.frc.atenas.catedra.controller;
 import ar.edu.utn.frc.atenas.catedra.config.SecurityConfig;
 import ar.edu.utn.frc.atenas.catedra.dto.EstudianteResponse;
 import ar.edu.utn.frc.atenas.catedra.service.EstudianteService;
+import ar.edu.utn.frc.atenas.commons.error.ConflictoException;
 import ar.edu.utn.frc.atenas.commons.error.ManejadorGlobalDeErrores;
 import ar.edu.utn.frc.atenas.commons.error.NoEncontradoException;
 import ar.edu.utn.frc.atenas.commons.seguridad.ConversorJwtKeycloak;
@@ -138,6 +139,17 @@ class EstudianteControllerTest {
                         .with(jwt().authorities(new SimpleGrantedAuthority(Roles.PREFIJO_ROL + Roles.JEFE_CATEDRA))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.activo").value(false));
+    }
+
+    @Test
+    @DisplayName("RN-05: C13 responde 409 cuando el equipo está asegurado")
+    void deberiaResponderConflicto_cuandoEquipoEstaAsegurado() throws Exception {
+        when(estudianteService.darDeBaja(1L))
+                .thenThrow(new ConflictoException("El equipo está asegurado", "RN-05"));
+
+        mockMvc.perform(patch("/api/catedra/estudiantes/1/baja")
+                        .with(jwt().authorities(new SimpleGrantedAuthority(Roles.PREFIJO_ROL + Roles.JEFE_CATEDRA))))
+                .andExpect(status().isConflict());
     }
 
     @Test

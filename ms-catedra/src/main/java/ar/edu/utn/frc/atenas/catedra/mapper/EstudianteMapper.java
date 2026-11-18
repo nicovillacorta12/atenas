@@ -8,7 +8,8 @@ import ar.edu.utn.frc.atenas.catedra.entity.Estudiante;
 
 /**
  * Conversión manual entre {@link Estudiante} y los DTO públicos e internos.
- * El equipo todavía no existe; por eso los DTO lo informan como {@code null}.
+ * El equipo se recibe resuelto desde el service cuando existe una participación
+ * vigente.
  */
 public final class EstudianteMapper {
 
@@ -27,7 +28,7 @@ public final class EstudianteMapper {
                 estudiante.getComisionLectiva().getId());
     }
 
-    public static MiPerfilResponse aMiPerfil(Estudiante estudiante) {
+    public static MiPerfilResponse aMiPerfil(Estudiante estudiante, Long equipoId) {
         ComisionLectiva comisionLectiva = estudiante.getComisionLectiva();
         return new MiPerfilResponse(
                 estudiante.getId(),
@@ -41,10 +42,10 @@ public final class EstudianteMapper {
                 comisionLectiva.getComision().getNombre(),
                 comisionLectiva.getCursoLectivo().getId(),
                 comisionLectiva.getCursoLectivo().getAnio(),
-                null);
+                equipoId);
     }
 
-    public static EstudianteInternoResponse aInterno(Estudiante estudiante) {
+    public static EstudianteInternoResponse aInterno(Estudiante estudiante, Long equipoId) {
         ComisionLectiva comisionLectiva = estudiante.getComisionLectiva();
         return new EstudianteInternoResponse(
                 estudiante.getId(),
@@ -52,6 +53,6 @@ public final class EstudianteMapper {
                 estudiante.isActivo(),
                 comisionLectiva.getId(),
                 comisionLectiva.getCursoLectivo().getId(),
-                null);
+                equipoId);
     }
 }

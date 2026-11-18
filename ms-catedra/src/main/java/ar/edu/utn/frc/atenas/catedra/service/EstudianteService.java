@@ -9,12 +9,15 @@ import ar.edu.utn.frc.atenas.catedra.dto.EstudianteResponse;
 import ar.edu.utn.frc.atenas.catedra.dto.MiPerfilResponse;
 import ar.edu.utn.frc.atenas.catedra.entity.ComisionLectiva;
 import ar.edu.utn.frc.atenas.catedra.entity.Docente;
+import ar.edu.utn.frc.atenas.catedra.entity.Equipo;
 import ar.edu.utn.frc.atenas.catedra.entity.Estudiante;
 import ar.edu.utn.frc.atenas.catedra.mapper.EstudianteMapper;
 import ar.edu.utn.frc.atenas.catedra.repository.AsignacionDocenteRepository;
 import ar.edu.utn.frc.atenas.catedra.repository.ComisionLectivaRepository;
 import ar.edu.utn.frc.atenas.catedra.repository.DocenteRepository;
+import ar.edu.utn.frc.atenas.catedra.repository.EquipoRepository;
 import ar.edu.utn.frc.atenas.catedra.repository.EstudianteRepository;
+import ar.edu.utn.frc.atenas.catedra.repository.IntegranteRepository;
 import ar.edu.utn.frc.atenas.commons.error.AccesoDenegadoException;
 import ar.edu.utn.frc.atenas.commons.error.ConflictoException;
 import ar.edu.utn.frc.atenas.commons.error.NoEncontradoException;
@@ -48,6 +51,9 @@ public class EstudianteService {
     private final ComisionLectivaRepository comisionLectivaRepository;
     private final AsignacionDocenteRepository asignacionDocenteRepository;
     private final DocenteRepository docenteRepository;
+    private final IntegranteRepository integranteRepository;
+    private final EquipoRepository equipoRepository;
+    private final EquipoService equipoService;
     private final KeycloakAdminClient keycloakAdminClient;
     private final KeycloakProperties keycloakProperties;
     private final UsuarioActual usuarioActual;
@@ -56,6 +62,9 @@ public class EstudianteService {
                              ComisionLectivaRepository comisionLectivaRepository,
                              AsignacionDocenteRepository asignacionDocenteRepository,
                              DocenteRepository docenteRepository,
+                             IntegranteRepository integranteRepository,
+                             EquipoRepository equipoRepository,
+                             EquipoService equipoService,
                              KeycloakAdminClient keycloakAdminClient,
                              KeycloakProperties keycloakProperties,
                              UsuarioActual usuarioActual) {
@@ -63,6 +72,9 @@ public class EstudianteService {
         this.comisionLectivaRepository = comisionLectivaRepository;
         this.asignacionDocenteRepository = asignacionDocenteRepository;
         this.docenteRepository = docenteRepository;
+        this.integranteRepository = integranteRepository;
+        this.equipoRepository = equipoRepository;
+        this.equipoService = equipoService;
         this.keycloakAdminClient = keycloakAdminClient;
         this.keycloakProperties = keycloakProperties;
         this.usuarioActual = usuarioActual;
@@ -147,7 +159,13 @@ public class EstudianteService {
             throw new ServicioNoDisponibleException("El estudiante no tiene una cuenta de Keycloak asociada");
         }
 
-        // La validación de equipo de RN05 queda pendiente para A-E5.
+        integranteRepository.findByEstudianteIdAndFechaBajaIsNull(id).ifPresent(integrante -> {
+            Equipo equipo = equipoRepository.findByIdForUpdate(integrante.getEquipo().getId())
+                    .orElseThrow(() -> new NoEncontradoException(
+                            "No existe el equipo " + integrante.getEquipo().getId()));
+            equipoService.cerrarParticipacion(equipo, integrante);
+        });
+
         estudiante.setActivo(false);
         estudiante = estudianteRepository.saveAndFlush(estudiante);
         keycloakAdminClient.deshabilitarUsuario(estudiante.getSub());
@@ -158,7 +176,8 @@ public class EstudianteService {
 
     @Transactional(readOnly = true)
     public MiPerfilResponse miPerfil() {
-        return EstudianteMapper.aMiPerfil(obtenerPorSub(usuarioActual.sub()));
+        Estudiante estudiante = obtenerPorSub(usuarioActual.sub());
+        return EstudianteMapper.aMiPerfil(estudiante, equipoIdDe(estudiante.getId()));
     }
 
     @Transactional
@@ -183,12 +202,19 @@ public class EstudianteService {
         }
 
         log.info("Usuario de GitHub actualizado estudianteId={}", estudiante.getId());
-        return EstudianteMapper.aMiPerfil(estudiante);
+        return EstudianteMapper.aMiPerfil(estudiante, equipoIdDe(estudiante.getId()));
     }
 
     @Transactional(readOnly = true)
     public EstudianteInternoResponse obtenerInternoPorSub(String sub) {
-        return EstudianteMapper.aInterno(obtenerPorSub(sub));
+        Estudiante estudiante = obtenerPorSub(sub);
+        return EstudianteMapper.aInterno(estudiante, equipoIdDe(estudiante.getId()));
+    }
+
+    private Long equipoIdDe(Long estudianteId) {
+        return integranteRepository.findByEstudianteIdAndFechaBajaIsNull(estudianteId)
+                .map(integrante -> integrante.getEquipo().getId())
+                .orElse(null);
     }
 
     private Estudiante obtenerPorSub(String sub) {

@@ -11,11 +11,16 @@ import ar.edu.utn.frc.atenas.catedra.entity.Comision;
 import ar.edu.utn.frc.atenas.catedra.entity.ComisionLectiva;
 import ar.edu.utn.frc.atenas.catedra.entity.CursoLectivo;
 import ar.edu.utn.frc.atenas.catedra.entity.Docente;
+import ar.edu.utn.frc.atenas.catedra.entity.Equipo;
 import ar.edu.utn.frc.atenas.catedra.entity.Estudiante;
+import ar.edu.utn.frc.atenas.catedra.entity.Integrante;
+import ar.edu.utn.frc.atenas.catedra.estado.EstadoEquipo;
 import ar.edu.utn.frc.atenas.catedra.repository.AsignacionDocenteRepository;
 import ar.edu.utn.frc.atenas.catedra.repository.ComisionLectivaRepository;
 import ar.edu.utn.frc.atenas.catedra.repository.DocenteRepository;
+import ar.edu.utn.frc.atenas.catedra.repository.EquipoRepository;
 import ar.edu.utn.frc.atenas.catedra.repository.EstudianteRepository;
+import ar.edu.utn.frc.atenas.catedra.repository.IntegranteRepository;
 import ar.edu.utn.frc.atenas.commons.error.AccesoDenegadoException;
 import ar.edu.utn.frc.atenas.commons.error.ConflictoException;
 import ar.edu.utn.frc.atenas.commons.error.NoEncontradoException;
@@ -23,7 +28,6 @@ import ar.edu.utn.frc.atenas.commons.error.ServicioNoDisponibleException;
 import ar.edu.utn.frc.atenas.commons.error.SolicitudInvalidaException;
 import ar.edu.utn.frc.atenas.commons.seguridad.Roles;
 import ar.edu.utn.frc.atenas.commons.seguridad.UsuarioActual;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +35,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -66,6 +72,15 @@ class EstudianteServiceTest {
 
     @Mock
     private DocenteRepository docenteRepository;
+
+    @Mock
+    private IntegranteRepository integranteRepository;
+
+    @Mock
+    private EquipoRepository equipoRepository;
+
+    @Mock
+    private EquipoService equipoService;
 
     @Mock
     private KeycloakAdminClient keycloakAdminClient;
@@ -278,6 +293,26 @@ class EstudianteServiceTest {
     }
 
     @Test
+    @DisplayName("C14: devuelve el equipo vigente cuando el alumno ya ingresó")
+    void deberiaDevolverEquipoVigenteEnMiPerfil() {
+        Estudiante estudiante = estudiante();
+        Integrante integrante = new Integrante(
+                30L,
+                new Equipo(20L, "Equipo 1", 2, 3, EstadoEquipo.ABIERTO, comisionLectiva(), null),
+                estudiante,
+                Instant.now(),
+                null);
+        when(usuarioActual.sub()).thenReturn(SUB);
+        when(estudianteRepository.findBySub(SUB)).thenReturn(Optional.of(estudiante));
+        when(integranteRepository.findByEstudianteIdAndFechaBajaIsNull(ESTUDIANTE_ID))
+                .thenReturn(Optional.of(integrante));
+
+        MiPerfilResponse respuesta = estudianteService.miPerfil();
+
+        assertEquals(20L, respuesta.equipoId());
+    }
+
+    @Test
     @DisplayName("C14: responde 404 si no existe el estudiante del token")
     void deberiaLanzarNoEncontrado_cuandoNoHayPerfil() {
         when(usuarioActual.sub()).thenReturn("sub-desconocido");
@@ -287,23 +322,60 @@ class EstudianteServiceTest {
     }
 
     @Test
-    @DisplayName("I03: devuelve pertenencia con equipo nulo")
+    @DisplayName("I03: devuelve pertenencia con el equipo vigente")
     void deberiaDevolverContratoInterno() {
-        when(estudianteRepository.findBySub(SUB)).thenReturn(Optional.of(estudiante()));
+        Estudiante estudiante = estudiante();
+        Integrante integrante = new Integrante(
+                30L,
+                new Equipo(20L, "Equipo 1", 2, 3, EstadoEquipo.ABIERTO, comisionLectiva(), null),
+                estudiante,
+                Instant.now(),
+                null);
+        when(estudianteRepository.findBySub(SUB)).thenReturn(Optional.of(estudiante));
+        when(integranteRepository.findByEstudianteIdAndFechaBajaIsNull(ESTUDIANTE_ID))
+                .thenReturn(Optional.of(integrante));
 
         EstudianteInternoResponse respuesta = estudianteService.obtenerInternoPorSub(SUB);
 
         assertEquals(ESTUDIANTE_ID, respuesta.estudianteId());
         assertEquals(SUB, respuesta.sub());
         assertEquals(COMISION_LECTIVA_ID, respuesta.comisionLectivaId());
-        assertNull(respuesta.equipoId());
+        assertEquals(20L, respuesta.equipoId());
     }
 
     @Test
-    @Disabled("pendiente A-E5: validar equipo ABIERTO y cerrar participación")
-    @DisplayName("RN-05: un estudiante con equipo ASEGURADO no puede darse de baja")
+    @DisplayName("RN-05: cierra la participación cuando el equipo está ABIERTO")
+    void deberiaCerrarParticipacion_cuandoTieneEquipoAbierto() {
+        Integrante integrante = integrante(equipoAbierto());
+        when(estudianteRepository.findById(ESTUDIANTE_ID)).thenReturn(Optional.of(estudiante()));
+        when(integranteRepository.findByEstudianteIdAndFechaBajaIsNull(ESTUDIANTE_ID))
+                .thenReturn(Optional.of(integrante));
+        when(equipoRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(equipoAbierto()));
+        when(estudianteRepository.saveAndFlush(any(Estudiante.class)))
+                .thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        EstudianteResponse respuesta = estudianteService.darDeBaja(ESTUDIANTE_ID);
+
+        assertFalse(respuesta.activo());
+        verify(equipoService).cerrarParticipacion(any(Equipo.class), same(integrante));
+        verify(keycloakAdminClient).deshabilitarUsuario(SUB);
+    }
+
+    @Test
+    @DisplayName("RN-05: rechaza la baja si el equipo está ASEGURADO")
     void deberiaRechazarBaja_cuandoElEquipoEstaAsegurado() {
-        // Placeholder para la etapa de equipos.
+        Integrante integrante = integrante(equipoAsegurado());
+        when(estudianteRepository.findById(ESTUDIANTE_ID)).thenReturn(Optional.of(estudiante()));
+        when(integranteRepository.findByEstudianteIdAndFechaBajaIsNull(ESTUDIANTE_ID))
+                .thenReturn(Optional.of(integrante));
+        when(equipoRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(equipoAsegurado()));
+        doThrow(new ConflictoException("El equipo está asegurado", "RN-05"))
+                .when(equipoService).cerrarParticipacion(any(Equipo.class), same(integrante));
+
+        assertThrows(ConflictoException.class, () -> estudianteService.darDeBaja(ESTUDIANTE_ID));
+
+        verify(estudianteRepository, never()).saveAndFlush(any(Estudiante.class));
+        verify(keycloakAdminClient, never()).deshabilitarUsuario(SUB);
     }
 
     private void prepararDocente() {
@@ -333,5 +405,17 @@ class EstudianteServiceTest {
                 COMISION_LECTIVA_ID,
                 new Comision(5L, "Comisión 1"),
                 new CursoLectivo(2L, 2026, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 12, 15)));
+    }
+
+    private Equipo equipoAbierto() {
+        return new Equipo(20L, "Equipo 1", 2, 3, EstadoEquipo.ABIERTO, comisionLectiva(), estudiante());
+    }
+
+    private Equipo equipoAsegurado() {
+        return new Equipo(20L, "Equipo 1", 2, 3, EstadoEquipo.ASEGURADO, comisionLectiva(), estudiante());
+    }
+
+    private Integrante integrante(Equipo equipo) {
+        return new Integrante(30L, equipo, estudiante(), Instant.now(), null);
     }
 }

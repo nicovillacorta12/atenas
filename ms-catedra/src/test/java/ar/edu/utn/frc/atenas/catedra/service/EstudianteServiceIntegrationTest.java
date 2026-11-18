@@ -5,11 +5,16 @@ import ar.edu.utn.frc.atenas.catedra.dto.CrearEstudianteRequest;
 import ar.edu.utn.frc.atenas.catedra.entity.Comision;
 import ar.edu.utn.frc.atenas.catedra.entity.ComisionLectiva;
 import ar.edu.utn.frc.atenas.catedra.entity.CursoLectivo;
+import ar.edu.utn.frc.atenas.catedra.entity.Equipo;
 import ar.edu.utn.frc.atenas.catedra.entity.Estudiante;
+import ar.edu.utn.frc.atenas.catedra.entity.Integrante;
+import ar.edu.utn.frc.atenas.catedra.estado.EstadoEquipo;
 import ar.edu.utn.frc.atenas.catedra.repository.ComisionLectivaRepository;
 import ar.edu.utn.frc.atenas.catedra.repository.ComisionRepository;
 import ar.edu.utn.frc.atenas.catedra.repository.CursoLectivoRepository;
+import ar.edu.utn.frc.atenas.catedra.repository.EquipoRepository;
 import ar.edu.utn.frc.atenas.catedra.repository.EstudianteRepository;
+import ar.edu.utn.frc.atenas.catedra.repository.IntegranteRepository;
 import ar.edu.utn.frc.atenas.commons.error.ServicioNoDisponibleException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,9 +24,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -42,6 +50,12 @@ class EstudianteServiceIntegrationTest {
     private EstudianteRepository estudianteRepository;
 
     @Autowired
+    private EquipoRepository equipoRepository;
+
+    @Autowired
+    private IntegranteRepository integranteRepository;
+
+    @Autowired
     private ComisionLectivaRepository comisionLectivaRepository;
 
     @Autowired
@@ -55,6 +69,8 @@ class EstudianteServiceIntegrationTest {
 
     @BeforeEach
     void limpiar() {
+        integranteRepository.deleteAll();
+        equipoRepository.deleteAll();
         estudianteRepository.deleteAll();
         comisionLectivaRepository.deleteAll();
         comisionRepository.deleteAll();
@@ -92,6 +108,43 @@ class EstudianteServiceIntegrationTest {
 
         Estudiante guardado = estudianteRepository.findById(estudianteId).orElseThrow();
         assertTrue(guardado.isActivo());
+    }
+
+    @Test
+    @DisplayName("RN-05: la baja cierra la participación y reasigna al representante")
+    void deberiaCerrarParticipacionYReasignar_cuandoTieneEquipoAbierto() {
+        ComisionLectiva comisionLectiva = crearComisionLectiva();
+        Estudiante representante = crearEstudiante("900001", "sub-representante", comisionLectiva);
+        Estudiante segundo = crearEstudiante("900002", "sub-segundo", comisionLectiva);
+
+        Equipo equipo = new Equipo("Equipo integración", 2, 3, comisionLectiva);
+        equipo.setRepresentante(representante);
+        equipo = equipoRepository.saveAndFlush(equipo);
+        Integrante participacionRepresentante = integranteRepository.saveAndFlush(
+                new Integrante(equipo, representante, Instant.now().minusSeconds(10)));
+        integranteRepository.saveAndFlush(new Integrante(equipo, segundo, Instant.now()));
+
+        estudianteService.darDeBaja(representante.getId());
+
+        Estudiante representanteGuardado = estudianteRepository.findById(representante.getId()).orElseThrow();
+        Integrante participacionGuardada = integranteRepository
+                .findById(participacionRepresentante.getId()).orElseThrow();
+        Equipo equipoGuardado = equipoRepository.findById(equipo.getId()).orElseThrow();
+
+        assertFalse(representanteGuardado.isActivo());
+        assertNotNull(participacionGuardada.getFechaBaja());
+        assertEquals(segundo.getId(), equipoGuardado.getRepresentante().getId());
+    }
+
+    private Estudiante crearEstudiante(String legajo, String sub, ComisionLectiva comisionLectiva) {
+        Estudiante estudiante = new Estudiante(
+                legajo,
+                "Alumno",
+                "Prueba",
+                legajo + "@sistemas.frc.utn.edu.ar",
+                comisionLectiva);
+        estudiante.setSub(sub);
+        return estudianteRepository.saveAndFlush(estudiante);
     }
 
     private ComisionLectiva crearComisionLectiva() {

@@ -41,8 +41,8 @@ JDK 21, Maven 3.9, Docker Desktop (Compose v2). Credenciales: token de GitHub y 
    - `GET /api/documentacion/v3/api-docs` sin token → `200`
    - `POST /api/documentacion/hitos/1/entregas` sin token → `401`
    - `GET /internal/equipos/1` con token → `404`
-7. La carpeta `01 Estructura y usuarios` contiene las requests C01–C13 de F02 y F03. La carpeta `05 Consultas del alumno` contiene C14–C15 y usa el token de alumno `token-alumno-b`. Las carpetas `02`–`04` y `06`–`08` se completan junto con las historias siguientes.
-8. Para C14/C15, iniciá sesión con un alumno de prueba y guardá el token como `token-alumno-b`. Si el alumno se creó con clave temporal, Keycloak le pedirá cambiarla en el primer inicio.
+7. La carpeta `01 Estructura y usuarios` contiene las requests C01–C13 de F02 y F03. La carpeta `02 Equipos` contiene C16–C22 de F04. La carpeta `05 Consultas del alumno` contiene C14–C15.
+8. Para C14/C15, C19 y C20, iniciá sesión con un alumno de prueba y guardá el token como `token-alumno-b`. Para C16, C21 y C22, usá un token de docente asignado guardado como `token-docente-a`. Si el alumno se creó con clave temporal, Keycloak le pedirá cambiarla en el primer inicio.
 
 El environment no contiene claves ni tokens: solo URLs, IDs vacíos y datos de Drive/GitHub marcados como `completar`. Los requests generan `X-Correlation-Id` automáticamente con `{{$guid}}`.
 
