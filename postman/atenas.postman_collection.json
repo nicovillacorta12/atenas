@@ -1,0 +1,629 @@
+{
+  "info": {
+    "_postman_id": "9c20ca33-d2d8-4a13-8c5d-8284719d25b2",
+    "name": "Atenas",
+    "description": "Colección base del backend Atenas. Incluye la carpeta 00 Smoke para verificar la infraestructura y las carpetas 01 a 08, que se completan a medida que se implementan las historias.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 Smoke",
+      "description": "Verificaciones mínimas de infraestructura y seguridad: documentación pública, rechazo sin token y ausencia de ruta interna en el Gateway.",
+      "auth": {
+        "type": "oauth2",
+        "oauth2": [
+          {
+            "key": "grant_type",
+            "value": "authorization_code",
+            "type": "string"
+          },
+          {
+            "key": "authUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth",
+            "type": "string"
+          },
+          {
+            "key": "accessTokenUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+            "type": "string"
+          },
+          {
+            "key": "clientId",
+            "value": "{{clientId}}",
+            "type": "string"
+          },
+          {
+            "key": "redirect_uri",
+            "value": "https://oauth.pstmn.io/v1/callback",
+            "type": "string"
+          },
+          {
+            "key": "scope",
+            "value": "openid profile email",
+            "type": "string"
+          },
+          {
+            "key": "tokenName",
+            "value": "token-jefe",
+            "type": "string"
+          },
+          {
+            "key": "addTokenTo",
+            "value": "header",
+            "type": "string"
+          },
+          {
+            "key": "client_authentication",
+            "value": "send_client_credentials_in_body",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "GET api-docs de documentación sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('GET /api/documentacion/v3/api-docs sin token responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "auth": {
+            "type": "noauth"
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/documentacion/v3/api-docs",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "documentacion",
+                "v3",
+                "api-docs"
+              ]
+            },
+            "description": "Verifica que la documentación de ms-documentacion esté disponible por el Gateway sin token."
+          }
+        },
+        {
+          "name": "POST entrega sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('POST /api/documentacion/hitos/1/entregas sin token responde 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "auth": {
+            "type": "noauth"
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/documentacion/hitos/1/entregas",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "documentacion",
+                "hitos",
+                "1",
+                "entregas"
+              ]
+            },
+            "description": "Verifica que el Gateway rechace con 401 una operación protegida cuando no se envía token."
+          }
+        },
+        {
+          "name": "GET equipo interno con token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('GET /internal/equipos/1 por el Gateway responde 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/internal/equipos/1",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "internal",
+                "equipos",
+                "1"
+              ]
+            },
+            "description": "Verifica que el Gateway no exponga rutas internas entre microservicios."
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 Estructura y usuarios",
+      "description": "Cursos lectivos, comisiones, docentes y estudiantes. Se completa al implementar F02 y F03.",
+      "auth": {
+        "type": "oauth2",
+        "oauth2": [
+          {
+            "key": "grant_type",
+            "value": "authorization_code",
+            "type": "string"
+          },
+          {
+            "key": "authUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth",
+            "type": "string"
+          },
+          {
+            "key": "accessTokenUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+            "type": "string"
+          },
+          {
+            "key": "clientId",
+            "value": "{{clientId}}",
+            "type": "string"
+          },
+          {
+            "key": "redirect_uri",
+            "value": "https://oauth.pstmn.io/v1/callback",
+            "type": "string"
+          },
+          {
+            "key": "scope",
+            "value": "openid profile email",
+            "type": "string"
+          },
+          {
+            "key": "tokenName",
+            "value": "token-jefe",
+            "type": "string"
+          },
+          {
+            "key": "addTokenTo",
+            "value": "header",
+            "type": "string"
+          },
+          {
+            "key": "client_authentication",
+            "value": "send_client_credentials_in_body",
+            "type": "string"
+          }
+        ]
+      },
+      "item": []
+    },
+    {
+      "name": "02 Equipos",
+      "description": "Creación de equipos, ingreso y salida de integrantes, aseguramiento y reapertura. Se completa al implementar F04 y F05.",
+      "auth": {
+        "type": "oauth2",
+        "oauth2": [
+          {
+            "key": "grant_type",
+            "value": "authorization_code",
+            "type": "string"
+          },
+          {
+            "key": "authUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth",
+            "type": "string"
+          },
+          {
+            "key": "accessTokenUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+            "type": "string"
+          },
+          {
+            "key": "clientId",
+            "value": "{{clientId}}",
+            "type": "string"
+          },
+          {
+            "key": "redirect_uri",
+            "value": "https://oauth.pstmn.io/v1/callback",
+            "type": "string"
+          },
+          {
+            "key": "scope",
+            "value": "openid profile email",
+            "type": "string"
+          },
+          {
+            "key": "tokenName",
+            "value": "token-jefe",
+            "type": "string"
+          },
+          {
+            "key": "addTokenTo",
+            "value": "header",
+            "type": "string"
+          },
+          {
+            "key": "client_authentication",
+            "value": "send_client_credentials_in_body",
+            "type": "string"
+          }
+        ]
+      },
+      "item": []
+    },
+    {
+      "name": "03 Calendario y repositorio",
+      "description": "Eventos de la comisión, asistencia, vinculación de repositorio y actividad de GitHub. Se completa al implementar F11, F14 y F15.",
+      "auth": {
+        "type": "oauth2",
+        "oauth2": [
+          {
+            "key": "grant_type",
+            "value": "authorization_code",
+            "type": "string"
+          },
+          {
+            "key": "authUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth",
+            "type": "string"
+          },
+          {
+            "key": "accessTokenUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+            "type": "string"
+          },
+          {
+            "key": "clientId",
+            "value": "{{clientId}}",
+            "type": "string"
+          },
+          {
+            "key": "redirect_uri",
+            "value": "https://oauth.pstmn.io/v1/callback",
+            "type": "string"
+          },
+          {
+            "key": "scope",
+            "value": "openid profile email",
+            "type": "string"
+          },
+          {
+            "key": "tokenName",
+            "value": "token-jefe",
+            "type": "string"
+          },
+          {
+            "key": "addTokenTo",
+            "value": "header",
+            "type": "string"
+          },
+          {
+            "key": "client_authentication",
+            "value": "send_client_credentials_in_body",
+            "type": "string"
+          }
+        ]
+      },
+      "item": []
+    },
+    {
+      "name": "04 Proceso principal",
+      "description": "Flujo de hito, entrega, apertura, corrección, actividad y dashboard. Se completa al implementar F06, F07, F08, F09, F10, F12 y F13.",
+      "auth": {
+        "type": "oauth2",
+        "oauth2": [
+          {
+            "key": "grant_type",
+            "value": "authorization_code",
+            "type": "string"
+          },
+          {
+            "key": "authUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth",
+            "type": "string"
+          },
+          {
+            "key": "accessTokenUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+            "type": "string"
+          },
+          {
+            "key": "clientId",
+            "value": "{{clientId}}",
+            "type": "string"
+          },
+          {
+            "key": "redirect_uri",
+            "value": "https://oauth.pstmn.io/v1/callback",
+            "type": "string"
+          },
+          {
+            "key": "scope",
+            "value": "openid profile email",
+            "type": "string"
+          },
+          {
+            "key": "tokenName",
+            "value": "token-jefe",
+            "type": "string"
+          },
+          {
+            "key": "addTokenTo",
+            "value": "header",
+            "type": "string"
+          },
+          {
+            "key": "client_authentication",
+            "value": "send_client_credentials_in_body",
+            "type": "string"
+          }
+        ]
+      },
+      "item": []
+    },
+    {
+      "name": "05 Consultas del alumno",
+      "description": "Consultas de perfil, entregas propias y asistencia. Se completa al implementar F08, F16 y C14.",
+      "auth": {
+        "type": "oauth2",
+        "oauth2": [
+          {
+            "key": "grant_type",
+            "value": "authorization_code",
+            "type": "string"
+          },
+          {
+            "key": "authUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth",
+            "type": "string"
+          },
+          {
+            "key": "accessTokenUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+            "type": "string"
+          },
+          {
+            "key": "clientId",
+            "value": "{{clientId}}",
+            "type": "string"
+          },
+          {
+            "key": "redirect_uri",
+            "value": "https://oauth.pstmn.io/v1/callback",
+            "type": "string"
+          },
+          {
+            "key": "scope",
+            "value": "openid profile email",
+            "type": "string"
+          },
+          {
+            "key": "tokenName",
+            "value": "token-jefe",
+            "type": "string"
+          },
+          {
+            "key": "addTokenTo",
+            "value": "header",
+            "type": "string"
+          },
+          {
+            "key": "client_authentication",
+            "value": "send_client_credentials_in_body",
+            "type": "string"
+          }
+        ]
+      },
+      "item": []
+    },
+    {
+      "name": "06 Reglas de dominio",
+      "description": "Casos que evidencian las reglas de negocio. Se completa junto con las historias de F03 y F04.",
+      "auth": {
+        "type": "oauth2",
+        "oauth2": [
+          {
+            "key": "grant_type",
+            "value": "authorization_code",
+            "type": "string"
+          },
+          {
+            "key": "authUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth",
+            "type": "string"
+          },
+          {
+            "key": "accessTokenUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+            "type": "string"
+          },
+          {
+            "key": "clientId",
+            "value": "{{clientId}}",
+            "type": "string"
+          },
+          {
+            "key": "redirect_uri",
+            "value": "https://oauth.pstmn.io/v1/callback",
+            "type": "string"
+          },
+          {
+            "key": "scope",
+            "value": "openid profile email",
+            "type": "string"
+          },
+          {
+            "key": "tokenName",
+            "value": "token-jefe",
+            "type": "string"
+          },
+          {
+            "key": "addTokenTo",
+            "value": "header",
+            "type": "string"
+          },
+          {
+            "key": "client_authentication",
+            "value": "send_client_credentials_in_body",
+            "type": "string"
+          }
+        ]
+      },
+      "item": []
+    },
+    {
+      "name": "07 Negativos",
+      "description": "Casos con 400, 401, 403, 404, 409, 422 y 503 según los contratos de docs/06. Se completa junto con cada historia que agrega rechazos.",
+      "auth": {
+        "type": "oauth2",
+        "oauth2": [
+          {
+            "key": "grant_type",
+            "value": "authorization_code",
+            "type": "string"
+          },
+          {
+            "key": "authUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth",
+            "type": "string"
+          },
+          {
+            "key": "accessTokenUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+            "type": "string"
+          },
+          {
+            "key": "clientId",
+            "value": "{{clientId}}",
+            "type": "string"
+          },
+          {
+            "key": "redirect_uri",
+            "value": "https://oauth.pstmn.io/v1/callback",
+            "type": "string"
+          },
+          {
+            "key": "scope",
+            "value": "openid profile email",
+            "type": "string"
+          },
+          {
+            "key": "tokenName",
+            "value": "token-jefe",
+            "type": "string"
+          },
+          {
+            "key": "addTokenTo",
+            "value": "header",
+            "type": "string"
+          },
+          {
+            "key": "client_authentication",
+            "value": "send_client_credentials_in_body",
+            "type": "string"
+          }
+        ]
+      },
+      "item": []
+    },
+    {
+      "name": "08 Fallas controladas",
+      "description": "Dependencias caídas o pausadas y comportamiento de `ProblemDetail` con `X-Correlation-Id`. Se completa junto con las integraciones y la tarea nocturna.",
+      "auth": {
+        "type": "oauth2",
+        "oauth2": [
+          {
+            "key": "grant_type",
+            "value": "authorization_code",
+            "type": "string"
+          },
+          {
+            "key": "authUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth",
+            "type": "string"
+          },
+          {
+            "key": "accessTokenUrl",
+            "value": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+            "type": "string"
+          },
+          {
+            "key": "clientId",
+            "value": "{{clientId}}",
+            "type": "string"
+          },
+          {
+            "key": "redirect_uri",
+            "value": "https://oauth.pstmn.io/v1/callback",
+            "type": "string"
+          },
+          {
+            "key": "scope",
+            "value": "openid profile email",
+            "type": "string"
+          },
+          {
+            "key": "tokenName",
+            "value": "token-jefe",
+            "type": "string"
+          },
+          {
+            "key": "addTokenTo",
+            "value": "header",
+            "type": "string"
+          },
+          {
+            "key": "client_authentication",
+            "value": "send_client_credentials_in_body",
+            "type": "string"
+          }
+        ]
+      },
+      "item": []
+    }
+  ]
+}
