@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
+import static ar.edu.utn.frc.atenas.commons.seguridad.Roles.ALUMNO;
 import static ar.edu.utn.frc.atenas.commons.seguridad.Roles.DOCENTE;
 import static ar.edu.utn.frc.atenas.commons.seguridad.Roles.JEFE_CATEDRA;
 
@@ -55,6 +56,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/catedra/docentes/*/baja").hasRole(JEFE_CATEDRA)
                         .requestMatchers(HttpMethod.POST, "/api/catedra/comisiones-lectivas/*/docentes")
                         .hasRole(JEFE_CATEDRA)
+
+                        // Estudiantes: el jefe administra; el docente consulta sus comisiones.
+                        .requestMatchers(HttpMethod.POST, "/api/catedra/estudiantes").hasRole(JEFE_CATEDRA)
+                        .requestMatchers(HttpMethod.GET, "/api/catedra/comisiones-lectivas/*/estudiantes")
+                        .hasAnyRole(JEFE_CATEDRA, DOCENTE)
+                        .requestMatchers(HttpMethod.PATCH, "/api/catedra/estudiantes/*/baja").hasRole(JEFE_CATEDRA)
+
+                        // Perfil propio: exclusivo del alumno autenticado.
+                        .requestMatchers(HttpMethod.GET, "/api/catedra/mi-perfil").hasRole(ALUMNO)
+                        .requestMatchers(HttpMethod.PUT, "/api/catedra/mi-perfil/usuario-github").hasRole(ALUMNO)
 
                         // Los contratos internos exigen JWT, pero no un rol público.
                         .requestMatchers("/internal/**").authenticated()

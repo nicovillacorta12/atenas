@@ -738,6 +738,153 @@
             },
             "description": "Da de baja lógicamente al docente y deshabilita su cuenta de Keycloak."
           }
+        },
+        {
+          "name": "C11 Crear estudiante",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C11 responde 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('C11 devuelve Location', function () {",
+                  "    pm.response.to.have.header('Location');",
+                  "});",
+                  "pm.test('C11 deriva el mail del legajo', function () {",
+                  "    pm.expect(pm.response.json().mail).to.include('@sistemas.frc.utn.edu.ar');",
+                  "});",
+                  "pm.test('C11 guarda estudianteId', function () {",
+                  "    pm.environment.set('estudianteId', pm.response.json().id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legajo\": \"{{$timestamp}}\",\n  \"nombre\": \"Alumno\",\n  \"apellido\": \"Prueba\",\n  \"comisionLectivaId\": {{comisionLectivaId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/estudiantes",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "estudiantes"
+              ]
+            },
+            "description": "Crea un estudiante con legajo numérico único y su cuenta de Keycloak; guarda el id local."
+          }
+        },
+        {
+          "name": "C12 Listar estudiantes de la comisión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C12 responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('C12 devuelve una lista', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/comisiones-lectivas/{{comisionLectivaId}}/estudiantes",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "comisiones-lectivas",
+                "{{comisionLectivaId}}",
+                "estudiantes"
+              ]
+            },
+            "description": "Lista los estudiantes de la comisión creada en F02. El jefe ve todos; el docente debe estar asignado."
+          }
+        },
+        {
+          "name": "C13 Dar de baja al estudiante",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C13 responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('C13 deja al estudiante inactivo', function () {",
+                  "    pm.expect(pm.response.json().activo).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/estudiantes/{{estudianteId}}/baja",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "estudiantes",
+                "{{estudianteId}}",
+                "baja"
+              ]
+            },
+            "description": "Da de baja lógicamente al estudiante y deshabilita su cuenta de Keycloak."
+          }
         }
       ]
     },
@@ -908,7 +1055,7 @@
     },
     {
       "name": "05 Consultas del alumno",
-      "description": "Consultas de perfil, entregas propias y asistencia. Se completa al implementar F08, F16 y C14.",
+      "description": "Consultas de perfil, entregas propias y asistencia. Incluye C14 y C15 de F05; las consultas de entregas y asistencia se agregan con F08 y F16.",
       "auth": {
         "type": "oauth2",
         "oauth2": [
@@ -944,7 +1091,7 @@
           },
           {
             "key": "tokenName",
-            "value": "token-jefe",
+            "value": "token-alumno-b",
             "type": "string"
           },
           {
@@ -959,7 +1106,105 @@
           }
         ]
       },
-      "item": []
+      "item": [
+        {
+          "name": "C14 Consultar mi perfil",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C14 responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('C14 informa el equipo como nulo', function () {",
+                  "    pm.expect(pm.response.json().equipoId).to.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/mi-perfil",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "mi-perfil"
+              ]
+            },
+            "description": "Consulta el perfil del alumno autenticado. Requiere token de alumno."
+          }
+        },
+        {
+          "name": "C15 Actualizar usuario de GitHub",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C15 responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('C15 devuelve el usuario en minúsculas', function () {",
+                  "    pm.expect(pm.response.json().usuarioGithub).to.match(/^[a-z0-9-]{1,39}$/);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioGithub\": \"alumno-{{$timestamp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/mi-perfil/usuario-github",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "mi-perfil",
+                "usuario-github"
+              ]
+            },
+            "description": "Carga el usuario de GitHub del alumno autenticado y lo normaliza a minúsculas. Requiere token de alumno."
+          }
+        }
+      ]
     },
     {
       "name": "06 Reglas de dominio",
