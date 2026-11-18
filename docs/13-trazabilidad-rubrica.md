@@ -5,7 +5,7 @@ Rúbrica general TPI 2026 (propuesta 0.11, 105 puntos; todavía no aprobada). Es
 ## A. Criterio → evidencia
 | Criterio (pts) | Qué hay que poder mostrar | Evidencia / dónde | Estado |
 |---|---|---|---|
-| **NEG-01** Proceso central del MVP (15) | Actividad → entrega verificada → corrección → dashboard, de punta a punta | Postman carpeta 04; `docs/09` flujos 1 y 2 | ☐ |
+| **NEG-01** Proceso central del MVP (15) | Hito → entrega verificada → corrección → dashboard, de punta a punta | Postman carpeta 04; `docs/09` flujos 1 y 2 | ☐ |
 | **NEG-02** Reglas de negocio (10) | Reglas implementadas, trazables a pruebas y a casos Postman; rechazos con código correcto | `docs/03`; tests con `@DisplayName("RN-xx …")`; Postman 06–07 | ☐ |
 | **ARQ-01** Arquitectura y microservicios (12) | Límites coherentes, datos propios, independencia razonable, alternativas consideradas | `docs/04`, `docs/05`, `docs/adr.md` | ☐ |
 | **INT-01** Integración y colaboración (12) | Qué servicio inicia, qué necesita, qué conserva, qué pasa si no responde; contratos; trazabilidad por correlation-id | `docs/09`, `docs/06` (internos), Postman 08, logs por `X-Correlation-Id` | ☐ |
@@ -37,14 +37,13 @@ Rúbrica general TPI 2026 (propuesta 0.11, 105 puntos; todavía no aprobada). Es
 | F14 | `ms-seguimiento` | S01, S02 | 03 | | ☐ |
 | F15 | `ms-seguimiento` | S03–S05 | 03 | | ☐ |
 | F16 | `ms-seguimiento` | S05, S06 | 05 | | ☐ |
-| F17 | `ms-catedra` | C23 | 02, 06 | | ☐ |
 
 ## C. Comprobaciones del cuestionario (se ejecutan en la defensa)
 1. Sin token → 401 del Gateway; el servicio no registra el pedido.
-2. Actividad creada por docente de la comisión → 201; mismo `correlationId` en logs de `ms-documentacion` y `ms-catedra`.
+2. Hito definido por el jefe con curso y fechas válidos → 201; mismo `correlationId` en logs de `ms-documentacion` y `ms-catedra`.
 3. Entrega verificada → 201 `ENTREGADA`; repetida → 409.
 4. Apertura (cambios en Drive) y corrección con nota → `CORREGIDA`; repetir → 409.
 5. Actividad de GitHub → snapshot `ACTUALIZADO`; con token inválido → `DESACTUALIZADO`.
 6. Dashboard consolidado; con `ms-documentacion` pausado → sin sección de entregas.
-7. Alumno no representante: 403 del Gateway en ruta de docente y 403 del servicio al entregar.
+7. Alumno no representante: 403 del Gateway al crear un hito y 403 del servicio al entregar.
 8. `docker compose pause ms-catedra` → 503 con `ProblemDetail`; al reanudar → 200.

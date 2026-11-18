@@ -14,14 +14,14 @@ Atenas es un backend que centraliza la información de la cátedra, aplica las r
 ## Actores
 | Actor | Qué hace | Cómo se identifica |
 |---|---|---|
-| Jefe de cátedra | Administra cursos, comisiones, usuarios; consulta todos los equipos | Rol `JEFE_CATEDRA` (solo existe en Keycloak) |
-| Docente | Gestiona equipos, actividades, calendario y asistencia de **sus** comisiones; corrige y califica | Rol `DOCENTE` + asignación a comisión |
+| Jefe de cátedra | Administra cursos, comisiones, usuarios e hitos; consulta todos los equipos | Rol `JEFE_CATEDRA` (solo existe en Keycloak) |
+| Docente | Gestiona equipos, calendario y asistencia de **sus** comisiones; corrige y califica | Rol `DOCENTE` + asignación a comisión |
 | Alumno | Integra un equipo, carga su usuario de GitHub, consulta su asistencia y las entregas de su equipo | Rol `ALUMNO` |
 | Representante | Alumno que asegura el equipo, vincula el repositorio y registra entregas | **No es un rol**: es un dato del equipo que valida `ms-catedra` |
 | Sistema de tarea nocturna | Actualiza la actividad de GitHub | Cuenta de servicio, rol `SERVICIO` |
 
 ## Alcance del MVP (comprometido con la cátedra)
-Estructura académica y usuarios · conformación de equipos y estado de su proyecto · definición de actividades · registro y verificación de entregas en Drive · corrección y nota · calendario y asistencia · vinculación de repositorios · actividad por sprint · dashboard por equipo · acceso controlado por rol.
+Estructura académica y usuarios · conformación de equipos · definición de hitos · registro y verificación de entregas en Drive · corrección y nota · calendario y asistencia · vinculación de repositorios · actividad por sprint · dashboard por equipo · acceso controlado por rol.
 
 ## Fuera de alcance
 - Interfaz gráfica; gestión Scrum (backlog, tableros).
@@ -30,14 +30,15 @@ Estructura académica y usuarios · conformación de equipos y estado de su proy
 - Almacenar o leer el contenido de los archivos; reemplazar una entrega registrada; reintentos automáticos hacia Drive.
 - GitHub: repositorios privados, más de una rama por equipo, webhooks, ETag.
 - Notificaciones (correos o avisos): las advertencias se informan al consultar.
+- Ciclo de vida del proyecto del equipo (en idea, en proceso, aprobado…): solo existen los estados `ABIERTO` y `ASEGURADO`.
 - Circuit breaker, reintentos automáticos, logs centralizados.
 
 ## Proceso central
-`actividad → entrega verificada → corrección y nota → dashboard`
+`hito → entrega verificada → corrección y nota → dashboard`
 
 ```mermaid
 flowchart LR
-    A[Docente crea la actividad<br/>de su comisión] --> B[Representante informa<br/>enlace de Drive]
+    A[Jefe define el hito<br/>del curso lectivo] --> B[Representante informa<br/>enlace de Drive]
     B --> C{Valida equipo asegurado,<br/>comisión, duplicado y Drive}
     C -- no --> X[Rechazo 400/403/409/422/503]
     C -- sí --> D[Entrega ENTREGADA<br/>marcada tardía si corresponde]
@@ -54,9 +55,9 @@ flowchart LR
 |---|---|
 | Curso lectivo | Marco temporal de un año de cursado |
 | Comisión | Comisión permanente (ej. "3K7"), independiente del año |
-| Comisión lectiva | Comisión dictada en un curso lectivo. Equipos, estudiantes, docentes y actividades apuntan a ella |
-| **Actividad** | Lo que el docente crea para su comisión y el equipo responde con una entrega (informe inicial, sprint, documento final). **Es el "hito" del cuestionario original** |
-| Entrega | Lo que un equipo registra para una actividad: un enlace de Drive verificado |
+| Comisión lectiva | Comisión dictada en un curso lectivo. Equipos, estudiantes y asignaciones docentes apuntan a ella |
+| **Hito** | Instancia de entrega común a un curso lectivo, definida por el jefe (informe inicial, sprint o documento final), con ventana de fechas y fecha límite |
+| Entrega | Lo que un equipo registra para un hito: un enlace de Drive verificado |
 | Snapshot | Resultado guardado de consultar la actividad de GitHub de un equipo en un sprint |
 | `sub` | Identificador único del usuario en Keycloak (claim del JWT) |
 | Trusted zone | Red interna de Docker: solo Gateway y Keycloak publican puertos |

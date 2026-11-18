@@ -17,7 +17,7 @@ La cátedra evalúa que **cualquiera** del equipo explique las decisiones y el f
 | Patrones | repo `BE-EXAMPLE-design-patterns` (`state/`, `adapter/`) | Justificar State y Adapter y descartar el resto |
 
 ## Cómo contar el sistema en 2 minutos
-1. Problema: información dispersa y controles manuales. 2. Solución: backend que integra datos propios con evidencia de Drive y GitHub. 3. Tres servicios con límites claros y un Gateway. 4. Proceso central: actividad → entrega verificada → corrección → dashboard. 5. Seguridad con Keycloak en dos capas. 6. Qué hacemos cuando algo externo falla.
+1. Problema: información dispersa y controles manuales. 2. Solución: backend que integra datos propios con evidencia de Drive y GitHub. 3. Tres servicios con límites claros y un Gateway. 4. Proceso central: hito → entrega verificada → corrección → dashboard. 5. Seguridad con Keycloak en dos capas. 6. Qué hacemos cuando algo externo falla.
 
 ## Preguntas probables y por dónde responderlas
 | Pregunta | Idea de respuesta | Ver |
@@ -29,9 +29,9 @@ La cátedra evalúa que **cualquiera** del equipo explique las decisiones y el f
 | ¿Por qué el Gateway y el servicio validan el JWT? | Defensa en profundidad: el Gateway corta lo grueso, el servicio aplica reglas de dominio | 04, adr-005 |
 | ¿Cómo evitan que un token de un alumno dado de baja funcione? | No se revoca; vida corta y validación contra `ms-catedra` en las operaciones | 04 |
 | ¿Por qué `PENDIENTE` no se guarda? | Se calcula: así los equipos nuevos no requieren sincronización | 05, adr-010 |
-| ¿Cómo garantizan una sola entrega por equipo y actividad? | `UNIQUE(actividad_id, equipo_id)` ante pedidos simultáneos → 409 | 05 |
+| ¿Cómo garantizan una sola entrega por equipo y hito? | `UNIQUE(hito_id, equipo_id)` ante pedidos simultáneos → 409 | 05 |
 | ¿Cómo evitan sobrecupo en un equipo? | `SELECT … FOR UPDATE` sobre la fila del equipo | 05 |
-| ¿Por qué State en `Equipo` y no en `Entrega`? | 7 estados con operaciones distintas vs 2 estados y una guarda | 10, adr-009 |
+| ¿Por qué State en `Equipo` y no en `Entrega`? | En `Equipo` varias reglas (RN05, RN08–RN11, RN18) dependen del estado y State las concentra; `Entrega` tiene una sola restricción y alcanza con una guarda. Con solo 2 estados la ganancia es modesta: hay que decirlo con honestidad | 10, adr-009 |
 | ¿Qué pasa si falla Keycloak al dar de alta? | Se revierte la transacción local y se responde 503; riesgo residual: cuenta huérfana si falla el commit | 09, adr-012 |
 | ¿Cómo demuestran un rechazo de seguridad y quién lo hizo? | Casos de la colección Postman + logs por `X-Correlation-Id`: 401/403 de rol los responde el Gateway; 403 de dominio, el servicio | 04, 13 |
 | ¿Por qué no Testcontainers? | No está en la cursada; lo propio de PostgreSQL se verifica con Docker y Postman | 08, adr-013 |

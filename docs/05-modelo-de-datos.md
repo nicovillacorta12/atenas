@@ -66,7 +66,7 @@ erDiagram
         varchar nombre
         int cupo_minimo
         int cupo_maximo
-        varchar estado "ver 03"
+        varchar estado "ABIERTO o ASEGURADO"
         bigint representante_id FK,UK "NULL si no tiene integrantes"
     }
     INTEGRANTE {
@@ -78,7 +78,7 @@ erDiagram
     }
 ```
 Restricciones: `UNIQUE(anio)`; `fecha_fin > fecha_inicio`; `UNIQUE(comision_id, curso_lectivo_id)`; `UNIQUE(docente_id, comision_lectiva_id)`; `UNIQUE(comision_lectiva_id, nombre)` en equipo; `cupo_minimo ≥ 1 y ≤ cupo_maximo`; **índice único parcial** sobre `integrante(estudiante_id) WHERE fecha_baja IS NULL` (RN07).
-`estado` ∈ `DESASEGURADO, EN_IDEA, EN_PROCESO, PENDIENTE_APROBACION, RECHAZADO, APROBADO, CANCELADO`.
+`estado` ∈ `ABIERTO, ASEGURADO`.
 
 Decisiones:
 - `COMISION` (permanente) separada de `COMISION_LECTIVA` (su dictado en un año).
@@ -93,21 +93,20 @@ Decisiones:
 ## Esquema `documentacion` (ms-documentacion)
 ```mermaid
 erDiagram
-    ACTIVIDAD ||--o{ ENTREGA : "recibe"
+    HITO ||--o{ ENTREGA : "recibe"
     ENTREGA ||--|| ARCHIVO_VERIFICADO : "referencia"
-    ACTIVIDAD {
+    HITO {
         bigint id PK
-        bigint comision_lectiva_id "ref. lógica a ms-catedra"
+        bigint curso_lectivo_id "ref. lógica a ms-catedra"
         varchar nombre
         varchar tipo "INFORME_INICIAL, SPRINT o DOCUMENTO_FINAL"
         int orden
         timestamptz fecha_inicio
         timestamptz fecha_limite
-        varchar creada_por_sub
     }
     ENTREGA {
         bigint id PK
-        bigint actividad_id FK
+        bigint hito_id FK
         bigint equipo_id "ref. lógica a ms-catedra"
         varchar estado "ENTREGADA o CORREGIDA"
         boolean tardia
@@ -128,8 +127,8 @@ erDiagram
         timestamptz modified_time_entrega
     }
 ```
-Restricciones: `UNIQUE(actividad_id, equipo_id)` (impide duplicados aun con pedidos simultáneos → 409); `UNIQUE(comision_lectiva_id, nombre)` en actividad; nota entre 1 y 10.
-Decisiones: `PENDIENTE` **no se persiste** (se calcula al consultar, así los equipos nuevos no requieren sincronización). `modified_time_entrega` no se sobrescribe; la comparación se calcula al abrir y se congela en `modificado_post_entrega` al corregir (queda `NULL` si Drive falla en ese momento). `ENTREGA` y `ARCHIVO_VERIFICADO` se guardan juntas en **una transacción local**, después de consultar `ms-catedra` y Drive.
+Restricciones: `UNIQUE(hito_id, equipo_id)` (impide duplicados aun con pedidos simultáneos → 409); nota entre 1 y 10; `fecha_inicio < fecha_limite`.
+Decisiones: `curso_lectivo_id`, `equipo_id` y los `_sub` no tienen FK (pertenecen a `ms-catedra` y Keycloak) y se validan por la API interna. `PENDIENTE` **no se persiste** (se calcula al consultar, así los equipos nuevos no requieren sincronización). `modified_time_entrega` no se sobrescribe; la comparación se calcula al abrir y se congela en `modificado_post_entrega` al corregir (queda `NULL` si Drive falla en ese momento). `ENTREGA` y `ARCHIVO_VERIFICADO` se guardan juntas en **una transacción local**, después de consultar `ms-catedra` y Drive.
 
 ## Esquema `seguimiento` (ms-seguimiento)
 ```mermaid
@@ -165,7 +164,7 @@ erDiagram
     SNAPSHOT_ACTIVIDAD {
         bigint id PK
         bigint repositorio_id FK
-        bigint actividad_id "sprint, ref. lógica a ms-documentacion"
+        bigint hito_id "sprint, ref. lógica a ms-documentacion"
         timestamptz fecha_consulta
         varchar estado "ACTUALIZADO, DESACTUALIZADO o NO_DISPONIBLE"
         int commits_totales "NULL si NO_DISPONIBLE"

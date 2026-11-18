@@ -31,7 +31,7 @@ flowchart LR
         gw["<b>API Gateway</b> :8080<br/>Spring Cloud Gateway WebFlux<br/>Routing + Security Filter"]
         subgraph servicios [Spring Boot 3.5 / Java 21]
             cat["<b>ms-catedra</b> :8082<br/>Estructura, usuarios, equipos"]
-            doc["<b>ms-documentacion</b> :8083<br/>Actividades, entregas, notas"]
+            doc["<b>ms-documentacion</b> :8083<br/>Hitos, entregas, notas"]
             seg["<b>ms-seguimiento</b> :8084<br/>Calendario, asistencia, GitHub, dashboard"]
         end
         pg[("<b>PostgreSQL 16</b><br/>esquemas: catedra, documentacion,<br/>seguimiento, keycloak")]
@@ -46,9 +46,9 @@ flowchart LR
     gw -->|"E5 /api/catedra/**"| cat
     gw -->|"E6 /api/seguimiento/**"| seg
     gw -->|"E7 JWKS"| kc
-    doc -->|"E8 equipo, docente, comisión"| cat
+    doc -->|"E8 equipo, docente, curso"| cat
     seg -->|"E9 comisión, equipos, docentes"| cat
-    seg -->|"E10 actividades y entregas"| doc
+    seg -->|"E10 hitos y entregas"| doc
     servicios -->|"E11 JDBC, un esquema c/u"| pg
     servicios -->|"E12 JWKS y token de servicio"| kc
     cat -->|"E13 Admin API"| kc
@@ -63,8 +63,8 @@ Dependencias entre servicios (sin ciclos): `ms-seguimiento → ms-documentacion 
 | Pieza | Es dueña de | No hace |
 |---|---|---|
 | **api-gateway** | Enrutamiento por prefijo, validación de firma/emisor/vencimiento del JWT, autorización gruesa por método+ruta+rol, `X-Correlation-Id` | Reglas de negocio; exponer `/internal/**` |
-| **ms-catedra** | Cursos, comisiones, docentes, estudiantes, equipos e integrantes; estado del proyecto del equipo; alta/baja de cuentas en Keycloak. **Fuente de verdad de personas y pertenencia** | Entregas, asistencia, GitHub |
-| **ms-documentacion** | Actividades, entregas y su estado, verificación en Drive, corrección y nota | Saber quién pertenece a qué equipo (lo pregunta a `ms-catedra`) |
+| **ms-catedra** | Cursos, comisiones, docentes, estudiantes, equipos e integrantes; alta/baja de cuentas en Keycloak. **Fuente de verdad de personas y pertenencia** | Entregas, asistencia, GitHub |
+| **ms-documentacion** | Hitos, entregas y su estado, verificación en Drive, corrección y nota | Saber quién pertenece a qué equipo (lo pregunta a `ms-catedra`) |
 | **ms-seguimiento** | Calendario, asistencia, repositorio vinculado, snapshots de actividad, dashboard (compone datos de los otros dos) | Datos de personas o entregas (los consulta) |
 | **atenas-commons** | Comportamiento técnico transversal (ver abajo) | Entidades, reglas de negocio, DTO de negocio |
 | **Keycloak** | Credenciales, roles, emisión de JWT | Datos del dominio |
@@ -79,7 +79,7 @@ Dependencias entre servicios (sin ciclos): `ms-seguimiento → ms-documentacion 
 | Operación | Dependencia | Resultado |
 |---|---|---|
 | Registrar entrega | `ms-catedra`, Drive | 503, no registra |
-| Crear actividad | `ms-catedra` | 503 |
+| Crear hito | `ms-catedra` (curso y fechas) | 503 |
 | Abrir entrega | `ms-catedra` / Drive | 503 / 200 con `NO_VERIFICADO` |
 | Corregir | `ms-catedra` | 503 |
 | Eventos y asistencia | `ms-catedra` | 503 |

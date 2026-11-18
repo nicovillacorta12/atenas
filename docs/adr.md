@@ -11,7 +11,7 @@ Formato: **Contexto → Decisión → Alternativas → Consecuencias**. Las deci
 
 ## ADR-002 — Tres servicios por responsabilidad
 **Contexto.** Hay que dividir por responsabilidades funcionales, no por capas ni por CRUD.
-**Decisión.** `ms-catedra` (personas, estructura, equipos; fuente de verdad de pertenencia), `ms-documentacion` (actividades, entregas, notas, Drive), `ms-seguimiento` (calendario, asistencia, GitHub, dashboard). Dependencias sin ciclos: seguimiento → documentacion → catedra y seguimiento → catedra.
+**Decisión.** `ms-catedra` (personas, estructura, equipos; fuente de verdad de pertenencia), `ms-documentacion` (hitos, entregas, notas, Drive), `ms-seguimiento` (calendario, asistencia, GitHub, dashboard). Dependencias sin ciclos: seguimiento → documentacion → catedra y seguimiento → catedra.
 **Alternativas.** Dos servicios (mezclar entregas con seguimiento: dos fuentes externas distintas en un solo dueño). Cuatro o más (calendario/asistencia separado: más costo de integración sin ganancia de independencia).
 **Consecuencias.** `ms-seguimiento` es el más dependiente y por eso compone el dashboard degradando si falta `ms-documentacion`.
 
@@ -51,15 +51,15 @@ Formato: **Contexto → Decisión → Alternativas → Consecuencias**. Las deci
 **Consecuencias.** Más clases pequeñas a cambio de aislamiento, errores traducidos en un solo lugar y tests sin red.
 
 ## ADR-009 — State solo para `Equipo`
-**Contexto.** El equipo tiene 7 estados con operaciones distintas (ver `03`). `Entrega` y `Snapshot` tienen 2 y 3 estados con poco comportamiento.
-**Decisión.** Patrón State en `Equipo`; enum persistido + objeto de comportamiento por estado. `Entrega` y `Snapshot` usan enum con guardas simples.
-**Alternativas.** `switch` por estado en el `service` (lógica repetida y cerrada a la extensión). State en todo (sobreingeniería).
-**Consecuencias.** Agregar un estado es agregar una clase. Se prueba con unitarios sin Spring.
+**Contexto.** El equipo tiene dos estados (`ABIERTO`, `ASEGURADO`) y varias reglas cuya validez depende de ellos (RN05, RN08–RN11, RN18). `Entrega` y `Snapshot` tienen poco comportamiento atado al estado.
+**Decisión.** Patrón State en `Equipo`: enum persistido + objeto de comportamiento por estado. `Entrega` y `Snapshot` usan enum con guardas simples.
+**Alternativas.** Enum con `if` en el `service` (más simple, pero la lógica se repite en cada operación y crece con cada estado nuevo). State en todo (sobreingeniería).
+**Consecuencias.** Con solo dos estados la ganancia es modesta; el equipo la acepta porque centraliza reglas y deja abierta la extensión. Si en la defensa se cuestiona, la respuesta honesta es esa. Se prueba con unitarios sin Spring.
 
 ## ADR-010 — `PENDIENTE` se calcula, no se persiste
-**Decisión.** No existe fila de entrega hasta que se registra; `PENDIENTE` = actividad sin entrega del equipo, calculado al consultar.
-**Alternativas.** Crear filas pendientes al crear la actividad (exige sincronizar con equipos nuevos o dados de baja).
-**Consecuencias.** Consultas que combinan actividades y equipos (I07); sin riesgo de datos desincronizados.
+**Decisión.** No existe fila de entrega hasta que se registra; `PENDIENTE` = hito sin entrega del equipo, calculado al consultar.
+**Alternativas.** Crear filas pendientes al crear el hito (exige sincronizar con equipos nuevos o dados de baja).
+**Consecuencias.** Consultas que combinan hitos y equipos (I07); sin riesgo de datos desincronizados.
 
 ## ADR-011 — Fechas en UTC con presentación en horario de Argentina
 **Contexto.** Drive y GitHub devuelven UTC; la cátedra opera en horario de Argentina; "tardía" y la ventana del sprint dependen de la zona.

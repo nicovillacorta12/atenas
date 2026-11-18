@@ -10,7 +10,7 @@ Integra información académica con evidencia de Google Drive (entregas) y GitHu
 |---|---|---|
 | `api-gateway` | Punto de entrada, JWT y autorización por rol | 8080 |
 | `ms-catedra` | Estructura académica, usuarios, equipos | 8082 (interno) |
-| `ms-documentacion` | Actividades, entregas, corrección | 8083 (interno) |
+| `ms-documentacion` | Hitos, entregas, corrección | 8083 (interno) |
 | `ms-seguimiento` | Calendario, asistencia, GitHub, dashboard | 8084 (interno) |
 | `atenas-commons` | Librería común (JAR Maven) | — |
 | Keycloak 26 / PostgreSQL 16 | Identidad / datos | 8081 / 5432 (solo dev) |

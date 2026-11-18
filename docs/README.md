@@ -14,7 +14,7 @@ Esta carpeta es la **fuente única de verdad**. Cada tema vive en un solo archiv
 | Archivo | Contenido |
 |---|---|
 | `01-vision-y-alcance.md` | Problema, actores, alcance, proceso central, glosario |
-| `02-requisitos.md` | Requisitos de la cátedra, funcionalidades F01–F17, requisitos no funcionales |
+| `02-requisitos.md` | Requisitos de la cátedra, funcionalidades F01–F16, requisitos no funcionales |
 | `03-reglas-de-negocio.md` | Catálogo RN, máquinas de estados |
 | `04-arquitectura.md` | C1/C2, responsabilidades, comunicación, seguridad, commons |
 | `05-modelo-de-datos.md` | DER de los tres esquemas y decisiones de persistencia |

@@ -1,44 +1,48 @@
-# 14 — Cambios, supuestos y pendientes respecto del cuestionario
+# 14 — Aclaraciones, supuestos y pendientes respecto del cuestionario
 
-El cuestionario del 4/11 es el compromiso base con la cátedra. Todo lo que se aparta de él se registra acá. **Los cambios marcados "avisar" modifican lo comprometido y hay que comunicarlos a la cátedra.**
+El cuestionario del 4/11 es el compromiso con la cátedra y **se mantiene como modelo oficial**: 16 funcionalidades (F01–F16), reglas RN01–RN33, 39 endpoints `/api` y 7 `/internal`, DER de los tres esquemas.
+Este archivo registra solo lo que el equipo **aclaró o ajustó** sobre ese modelo. Lo marcado "avisar" conviene comunicarlo a la cátedra.
 
-## A. Cambios decididos por el equipo
-| # | Cambio | Impacto | Avisar |
+## A. Decisiones de alcance confirmadas
+| Tema | Decisión |
+|---|---|
+| Hitos (F06, RN17) | Los crea **únicamente el jefe de cátedra** a nivel de curso lectivo. No hay "actividades" por docente ni comisión |
+| Estado del proyecto del equipo | **Fuera de alcance.** El diagrama de estados `StateMachineProyecto` (en idea, en proceso, pendiente de aprobación, aprobado, rechazado, cancelado) no se implementa. El equipo solo tiene `ABIERTO` y `ASEGURADO`. No existen F17 ni RN34–RN36 |
+| Google Drive (RN19) | Se valida existencia, acceso público y formato (PDF o Google Doc). Que el enlace permita comentar es una **instrucción operativa** a los alumnos, no una validación |
+
+## B. Aclaraciones y ajustes sobre reglas existentes
+| # | Regla | Qué se aclaró | Avisar |
 |---|---|---|---|
-| C-01 | **Las actividades (hitos) las crea el docente de cada comisión** en lugar del jefe a nivel de curso. Se renombra "hito" → "actividad" y pasan a pertenecer a una comisión lectiva (F06, RN17, endpoints D01/D02, tablas, I05/I06). El jefe solo las consulta | Modelo de `ms-documentacion`; RN18 valida la comisión | **Sí** |
-| C-02 | **Nuevo estado de proyecto del equipo** con máquina de estados (F17, RN34, RN35, endpoint C23). `ABIERTO/ASEGURADO` se reemplazan por `DESASEGURADO` + grupo asegurado (`EN_IDEA`…) + finales | Modelo de `ms-catedra`; patrón State | **Sí** (funcionalidad nueva, prioridad media) |
-| C-03 | RN10: el docente puede asegurar siempre; el representante solo con cantidad de integrantes entre mínimo y máximo (y GitHub cargado) | `PATCH …/aseguramiento` admite `DOCENTE` | Sí |
-| C-04 | RN05/RN09: ingresar, salir, rechazar y dar de baja solo con el equipo `DESASEGURADO`; si se desasegura y queda bajo el mínimo, solo el docente puede volver a asegurar | 409 adicionales | Sí |
-| C-05 | RN02: el mail del estudiante se deriva del legajo (`{legajo}@sistemas.frc.utn.edu.ar`); legajo numérico | Alta sin campo mail | No |
-| C-06 | RN03: alta con **clave temporal** (`CLAVE_TEMPORAL`) y cambio obligatorio en el primer ingreso, sin correos | — | No |
-| C-07 | RN24: nota **entera** de 1 a 10 | Columna `int` | No |
-| C-08 | RN27: los commits posteriores al límite del sprint no cuentan | — | No |
-| C-09 | Fechas en `timestamptz` (UTC) y offset de Argentina en la API | DER | No |
-| C-10 | `postgres/init.sql` pasa a **`postgres/init.sh`** para poder leer las claves del `.env` sin versionarlas | Archivo de arranque | No |
-| C-11 | Endpoint interno `GET /internal/cursos-lectivos/{id}` se reemplaza por `GET /internal/comisiones-lectivas/{id}`; `GET /internal/hitos` por `GET /internal/actividades` | Contratos internos | No |
-| C-12 | Rutas de listados anidadas bajo la comisión (`/comisiones-lectivas/{id}/actividades`) y query params `comisionLectivaId` | Contratos | No |
-| C-13 | Total: **40** endpoints `/api` (antes 39) y 7 `/internal` | — | — |
-| C-14 | `ms-catedra` y `ms-seguimiento` usan `spring-boot-starter-oauth2-client` para Client Credentials | Dependencia aprobada | No |
+| A-01 | RN02 | El mail del estudiante se deriva del legajo (`{legajo}@sistemas.frc.utn.edu.ar`); el legajo es numérico y único | No |
+| A-02 | RN03 | La cuenta se crea con una **clave temporal** de configuración (`CLAVE_TEMPORAL`) y cambio obligatorio en el primer ingreso; no se envían correos | No |
+| A-03 | RN05 y RN09 | El cuestionario las contradecía (la baja cierra la participación, pero salir de un equipo asegurado es 409). Se resuelve: **un equipo `ASEGURADO` impide cualquier salida**, incluida la baja lógica; primero un docente debe reabrirlo | Sí (aclaración) |
+| A-04 | RN10 | El **docente de la comisión puede asegurar siempre**; el representante solo si `cupoMinimo ≤ integrantes ≤ cupoMaximo` y todos tienen usuario de GitHub. El endpoint `PATCH …/aseguramiento` admite `ALUMNO` y `DOCENTE` | **Sí** (el cuestionario solo permitía al representante) |
+| A-05 | RN11 | Reabrir un equipo que ya está `ABIERTO` responde 409 | No |
+| A-06 | RN24 | La nota es **entera** de 1 a 10 | No |
+| A-07 | RN27 | Los commits posteriores a la fecha límite del sprint no cuentan; la ventana es `[fechaInicio, fechaLimite]` del hito `SPRINT` | No |
+| A-08 | Fechas | `timestamptz` (UTC) en base; la API responde con offset de Argentina; el cron usa `America/Argentina/Cordoba` | No |
 
-## B. Supuestos propuestos (confirmar; hay un default para no frenar)
-| # | Supuesto | Default adoptado |
+## C. Ajustes técnicos
+| # | Ajuste |
+|---|---|
+| T-01 | `postgres/init.sql` pasa a **`postgres/init.sh`** para leer las claves del `.env` sin versionarlas |
+| T-02 | `ms-catedra` y `ms-seguimiento` agregan `spring-boot-starter-oauth2-client` para Client Credentials (dependencia aprobada, `07`) |
+| T-03 | Parámetros de consulta definidos: `GET /hitos?cursoLectivoId=` (cualquier rol autenticado de los tres, sin regla adicional), `GET /entregas?comisionLectivaId=&hitoId=`, dashboard por `comisionLectivaId` (o `cursoLectivoId`, solo jefe) |
+| T-04 | Rutas con `comisioneslectivas` (corte de línea del PDF del cuestionario) se normalizan a `comisiones-lectivas` |
+| T-05 | La carpeta del Gateway se llama `api-gateway` |
+
+## D. Supuestos propuestos (default adoptado; confirmar)
+| # | Supuesto | Default |
 |---|---|---|
-| S-01 | Quién ejecuta cada acción de F17 | Docente: iniciar, aprobar, rechazar, cancelar. Representante: solicitar aprobación, reanudar |
-| S-02 | Qué hace cancelar | Cierra las participaciones vigentes (RN35) |
-| S-03 | Si el representante necesita GitHub cargado para asegurar | Sí, como en el cuestionario; el docente no tiene esa condición |
-| S-04 | Umbral de "baja contribución" | 50 % del promedio de commits por integrante, configurable (`atenas.actividad.umbral-baja-contribucion`) |
-| S-05 | Si el jefe puede crear actividades | No; solo consulta |
-| S-06 | Permiso del enlace de Drive | Debe permitir al menos comentar. **El sistema no puede verificarlo con API key**: se comunica como instrucción a los alumnos |
-| S-07 | `APROBADO` y `CANCELADO` | Estados finales: no admiten acciones ni bajas |
-| S-08 | Horario de la tarea nocturna | 02:00, `America/Argentina/Cordoba`, configurable |
+| S-01 | Umbral de "baja contribución" (RN27) | 50 % del promedio de commits por integrante, configurable (`atenas.actividad.umbral-baja-contribucion`) |
+| S-02 | Horario de la tarea nocturna (RN31) | 02:00, `America/Argentina/Cordoba`, configurable |
+| S-03 | Si el representante necesita GitHub cargado para asegurar | Sí (RN10 del cuestionario); el docente no |
 
-## C. Inconsistencias del cuestionario resueltas
-- RN04, RN14, RN16 y RN32 no existen; el dashboard degradado es **RN33** (el cuestionario lo cita como RN-32 en dos lugares).
-- "Todo endpoint responde 401 sin token" vs documentación OpenAPI pública: se entiende que **la documentación OpenAPI es la única excepción**.
-- Rutas con `comisioneslectivas` (corte de línea del PDF) se normalizan a `comisiones-lectivas`.
-- Nombre del Gateway: carpeta `api-gateway` (el cuestionario lo llama "API Gateway").
+## E. Inconsistencias del cuestionario resueltas
+- RN04, RN14, RN16 y RN32 no existen; el dashboard degradado es **RN33** (el cuestionario lo cita como RN-32 en dos lugares y como "RN-3" en uno).
+- "Todo endpoint responde 401 sin token" vs documentación OpenAPI pública: la documentación OpenAPI es la única excepción.
+- Contradicción RN05/RN09: ver A-03.
 
-## D. Pendientes abiertos
-- Confirmar con la cátedra C-01 y C-02 (alcance comprometido).
-- Confirmar S-01 a S-08 con el equipo.
+## F. Pendientes abiertos
+- Decidir si se comunica A-03 y A-04 a la cátedra (modifican levemente reglas comprometidas).
 - Spike del día 1: `iss` de Keycloak, healthcheck de Keycloak, Swagger por el Gateway, Drive y GitHub (ver `11`).

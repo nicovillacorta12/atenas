@@ -85,14 +85,14 @@ Si cambia `atenas-commons`: `mvn clean install` ahí y volver a compilar el serv
 | **Jue 19** | Congelar funcionalidad al mediodía. Postman completo (06–08), fallas controladas, README, ensayo de la defensa con `12` |
 | **Vie 20** | Defensa |
 
-Línea de corte (se avisa a la cátedra): primero F17, después F14–F16.
+Línea de corte (se avisa a la cátedra): F14–F16.
 
 ## Reparto propuesto (45 / 35 / 15 / 15)
 | Persona | Responsable de |
 |---|---|
 | **A — 45 %** | Toda la inicialización (estructura, `atenas-commons`, esqueletos y `/actuator/health` de los tres servicios, Gateway, Compose, Keycloak, PostgreSQL) y **`ms-catedra`** completo |
 | **B — 35 %** | **`ms-seguimiento`**. Empieza por lo que no depende de nadie: `GitHubClient`, cálculo de actividad y snapshots |
-| **C — 15 %** | `ms-documentacion` (parte 1): actividades (D01, D02), entrega (D03), `DriveClient`, `I06` |
+| **C — 15 %** | `ms-documentacion` (parte 1): hitos (D01, D02), entrega (D03), `DriveClient`, `I06` |
 | **D — 15 %** | `ms-documentacion` (parte 2): consultas (D04, D05), apertura y corrección (D06, D07), `I07`; consolida la colección Postman |
 
 (Quién es quién lo definen entre ustedes, considerando los parciales.)

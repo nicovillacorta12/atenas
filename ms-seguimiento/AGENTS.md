@@ -18,7 +18,7 @@ Puerto dev **8084** · esquema **`seguimiento`** (usuario `seguimiento_user`) ·
 - GitHub REST (`GitHubClient`, con `GITHUB_TOKEN`).
 
 ## Particularidades
-- **Cálculo de actividad (RN26–RN28)**: para cada actividad `SPRINT` de la comisión del equipo, contar commits de la rama elegida con fecha en `[fechaInicio, fechaLimite]` (los posteriores no cuentan), **sin merges** (más de un padre), atribuidos por `author.login` en minúsculas contra el usuario de GitHub cargado; los que no coinciden van a `commits_sin_atribuir`. Invariante: `commits_totales = Σ commits + commits_sin_atribuir`. Guardar una fila por integrante incluso con 0.
+- **Cálculo de actividad (RN26–RN28)**: para cada hito `SPRINT` del curso del equipo, contar commits de la rama elegida con fecha en `[fechaInicio, fechaLimite]` (los posteriores no cuentan), **sin merges** (más de un padre), atribuidos por `author.login` en minúsculas contra el usuario de GitHub cargado; los que no coinciden van a `commits_sin_atribuir`. Invariante: `commits_totales = Σ commits + commits_sin_atribuir`. Guardar una fila por integrante incluso con 0.
 - `GitHubClient` oculta la **paginación** (bucle) y devuelve un modelo propio; traduce 404 → repositorio/rama inexistente, y fallas/respuestas inesperadas → estados de RN28.
 - Fallas: el último snapshot pasa a `DESACTUALIZADO` conservando datos, o se crea uno `NO_DISPONIBLE` con contadores en `NULL`. Nunca bloquea y una falla en un equipo no corta a los demás.
 - Marcas "sin actividad" y "baja contribución" se **calculan al consultar** (umbral configurable `atenas.actividad.umbral-baja-contribucion`, por defecto 0.5 del promedio). No se persisten.

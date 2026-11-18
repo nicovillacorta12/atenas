@@ -7,7 +7,7 @@
 - JSON con propiedades en `camelCase` y español (`comisionLectivaId`). Todo **request** es un `record` con Bean Validation; todo **response**, un `record`.
 - Fechas: ISO-8601 con offset de Argentina (`2026-11-18T10:00:00-03:00`). Se aceptan con cualquier offset.
 - Códigos de éxito: `POST` que crea → **201** + `Location`; `GET` → **200**; `PUT`/`PATCH` de acción → **200** con el recurso; `DELETE` → **204**.
-- Sin paginación. Filtros por query string (`comisionLectivaId`, `actividadId`, `cursoLectivoId`, `equipoIds`).
+- Sin paginación. Filtros por query string (`comisionLectivaId`, `hitoId`, `cursoLectivoId`, `equipoIds`).
 - Identificadores de personas en rutas y cuerpos de otros servicios: `sub` de Keycloak.
 - Documentación: `/api/{servicio}/v3/api-docs` y Swagger UI sin token. Los controladores internos **no** aparecen en OpenAPI.
 
@@ -27,8 +27,8 @@
   "type": "about:blank",
   "title": "Conflicto",
   "status": 409,
-  "detail": "Ya existe una entrega del equipo 7 para la actividad 3",
-  "instance": "/api/documentacion/actividades/3/entregas",
+  "detail": "Ya existe una entrega del equipo 7 para el hito 3",
+  "instance": "/api/documentacion/hitos/3/entregas",
   "timestamp": "2026-11-18T10:15:30-03:00",
   "regla": "RN-29",
   "correlationId": "0b7e5c9e-…",
@@ -55,25 +55,24 @@
 | C10 | `POST /comisiones-lectivas/{id}/docentes` | Asignar docente a una comisión | JEFE | — | — |
 | C11 | `POST /estudiantes` | Registrar estudiante en una comisión y crear su cuenta | JEFE | — | RN02, RN03 |
 | C12 | `GET /comisiones-lectivas/{id}/estudiantes` | Listar estudiantes de una comisión | JEFE, DOCENTE | Docente de la comisión | RN01 |
-| C13 | `PATCH /estudiantes/{id}/baja` | Baja lógica de estudiante | JEFE | Equipo `DESASEGURADO` | RN05 |
+| C13 | `PATCH /estudiantes/{id}/baja` | Baja lógica de estudiante | JEFE | Equipo `ABIERTO` | RN05 |
 | C14 | `GET /mi-perfil` | Datos propios, comisión, curso y equipo | ALUMNO | `sub` del token | RN15 |
 | C15 | `PUT /mi-perfil/usuario-github` | Cargar usuario de GitHub | ALUMNO | `sub` del token | RN26 |
 | C16 | `POST /comisiones-lectivas/{id}/equipos` | Crear espacio de equipo | DOCENTE | Docente de la comisión | RN06 |
 | C17 | `GET /comisiones-lectivas/{id}/equipos` | Listar equipos y disponibilidad | JEFE, DOCENTE, ALUMNO | Docente o alumno de la comisión | RN01 |
 | C18 | `GET /equipos/{id}` | Consultar equipo, integrantes y representante | JEFE, DOCENTE, ALUMNO | Docente o alumno de la comisión | RN01 |
-| C19 | `POST /equipos/{id}/integrantes` | Ingresar a un equipo | ALUMNO | Alumno de la comisión; `DESASEGURADO`; cupo | RN07, RN08, RN09 |
-| C20 | `DELETE /equipos/{id}/integrantes/{estudianteId}` | Abandonar el equipo o rechazar un ingreso | ALUMNO | El propio integrante o el representante; `DESASEGURADO` | RN09 |
+| C19 | `POST /equipos/{id}/integrantes` | Ingresar a un equipo | ALUMNO | Alumno de la comisión; `ABIERTO`; cupo | RN07, RN08, RN09 |
+| C20 | `DELETE /equipos/{id}/integrantes/{estudianteId}` | Abandonar el equipo o rechazar un ingreso | ALUMNO | El propio integrante o el representante; `ABIERTO` | RN09 |
 | C21 | `PATCH /equipos/{id}/aseguramiento` | Asegurar el equipo | ALUMNO, DOCENTE | Representante con cupo en rango y GitHub cargado, **o** docente de la comisión | RN10 |
-| C22 | `PATCH /equipos/{id}/reapertura` | Desasegurar y reabrir el equipo | DOCENTE | Docente de la comisión | RN11 |
-| C23 | `PATCH /equipos/{id}/proyecto` | Ejecutar una acción sobre el estado del proyecto (`{"accion":"INICIAR"}`) | ALUMNO, DOCENTE | Según la acción (ver `03`) | RN34, RN35 |
+| C22 | `PATCH /equipos/{id}/reapertura` | Reabrir el equipo (vuelve a `ABIERTO`) | DOCENTE | Docente de la comisión | RN11 |
 
 ## ms-documentacion (`/api/documentacion`)
 | ID | Método y ruta | Operación | Gateway | Dominio | RN |
 |---|---|---|---|---|---|
-| D01 | `POST /comisiones-lectivas/{id}/actividades` | Crear actividad con ventana de fechas | DOCENTE | Docente asignado; fechas dentro del curso | RN17 |
-| D02 | `GET /comisiones-lectivas/{id}/actividades` | Listar actividades de una comisión | JEFE, DOCENTE, ALUMNO | Docente o alumno de la comisión | RN36 |
-| D03 | `POST /actividades/{id}/entregas` | Registrar entrega con enlace de Drive verificado | ALUMNO | Representante de equipo asegurado, de la comisión de la actividad | RN18–RN22, RN29 |
-| D04 | `GET /entregas?comisionLectivaId=&actividadId=` | Listar estado de entregas, incluidas pendientes | JEFE, DOCENTE | Docente de la comisión | RN01, RN20 |
+| D01 | `POST /hitos` | Definir un hito con ventana de fechas y fecha límite | JEFE | Curso lectivo existente; fechas dentro del curso (consulta a `ms-catedra`) | RN17 |
+| D02 | `GET /hitos?cursoLectivoId=` | Listar los hitos de un curso | JEFE, DOCENTE, ALUMNO | — | — |
+| D03 | `POST /hitos/{id}/entregas` | Registrar entrega con enlace de Drive verificado | ALUMNO | Representante de equipo asegurado, hito de su curso | RN18–RN22, RN29 |
+| D04 | `GET /entregas?comisionLectivaId=&hitoId=` | Listar estado de entregas por comisión e hito, incluidas pendientes | JEFE, DOCENTE | Docente de la comisión | RN01, RN20 |
 | D05 | `GET /mi-equipo/entregas` | Entregas del equipo propio, incluidas pendientes | ALUMNO | `sub` del token | RN15, RN20 |
 | D06 | `GET /entregas/{id}` | Abrir entrega: enlace y si cambió en Drive | DOCENTE | Docente de la comisión | RN30 |
 | D07 | `PATCH /entregas/{id}/correccion` | Cargar nota y marcar corregida (`{"nota":8}`) | DOCENTE | Docente de la comisión; `ENTREGADA`; 1–10 | RN24 |
@@ -92,7 +91,7 @@
 | S09 | `GET /dashboard/equipos?comisionLectivaId=` (o `cursoLectivoId=`, solo jefe) | Resumen de equipos | JEFE, DOCENTE | Docente de la comisión | RN33 |
 | S10 | `GET /dashboard/equipos/{id}` | Asistencia, entregas y actividad de un equipo | JEFE, DOCENTE | Docente de la comisión | RN33 |
 
-**Total: 40 endpoints `/api` + 7 `/internal`.**
+**Total: 39 endpoints `/api` + 7 `/internal`.**
 
 ## Payloads clave
 | Endpoint | Request |
@@ -101,8 +100,7 @@
 | C11 | `{ "legajo", "nombre", "apellido", "comisionLectivaId" }` (el mail se deriva) |
 | C16 | `{ "nombre", "cupoMinimo", "cupoMaximo" }` |
 | C15 | `{ "usuarioGithub" }` |
-| C23 | `{ "accion": "ASEGURAR"… }` — ver acciones en `03` |
-| D01 | `{ "nombre", "tipo", "orden", "fechaInicio", "fechaLimite" }` |
+| D01 | `{ "cursoLectivoId", "nombre", "tipo", "orden", "fechaInicio", "fechaLimite" }` |
 | D03 | `{ "enlace" }` |
 | D07 | `{ "nota": 8 }` (entero 1–10) |
 | S01 | `{ "tipo": "CLASE", "fecha", "descripcion" }` |
@@ -121,25 +119,25 @@ Se llaman con el JWT del usuario propagado; los marcados **(SERVICIO)** también
 | I02 | `GET /internal/equipos?comisionLectivaId=` o `?cursoLectivoId=` | Lista de equipos (mismo formato resumido) | `ms-seguimiento` |
 | I03 | `GET /internal/estudiantes/por-sub/{sub}` | Comisión, curso y equipo vigentes del alumno | `ms-documentacion`, `ms-seguimiento` |
 | I04 | `GET /internal/comisiones-lectivas/{id}/docentes/{sub}` | Si el docente está asignado a la comisión | `ms-documentacion`, `ms-seguimiento` |
-| I05 | `GET /internal/comisiones-lectivas/{id}` | Comisión y fechas de su curso lectivo | `ms-documentacion` |
-| I06 | `GET /internal/actividades?comisionLectivaId=&tipo=SPRINT` **(SERVICIO)** | Actividades de una comisión | `ms-seguimiento` |
-| I07 | `GET /internal/entregas?comisionLectivaId=&equipoIds=1,2` | Estado y nota por equipo y actividad (incluye `PENDIENTE` calculadas) | `ms-seguimiento` |
+| I05 | `GET /internal/cursos-lectivos/{id}` | Curso lectivo y sus fechas, para validar un hito | `ms-documentacion` |
+| I06 | `GET /internal/hitos?cursoLectivoId=&tipo=SPRINT` **(SERVICIO)** | Hitos de un curso (para calcular la actividad por sprint) | `ms-seguimiento` |
+| I07 | `GET /internal/entregas?cursoLectivoId=&equipoIds=1,2` | Estado y nota por equipo y hito (incluye `PENDIENTE` calculadas) | `ms-seguimiento` |
 
 I01–I05 pertenecen a `ms-catedra`; I06–I07 a `ms-documentacion`. Los DTO de estas respuestas se **duplican** en cada consumidor con solo los campos que usa (ver ADR-006). Forma acordada (los consumidores ignoran propiedades desconocidas):
 
 ```jsonc
 // I01 (I02 devuelve una lista con el mismo formato)
 { "id": 7, "nombre": "Equipo 1", "comisionLectivaId": 10, "cursoLectivoId": 2,
-  "estado": "EN_PROCESO", "asegurado": true, "representanteSub": "uuid",
+  "estado": "ASEGURADO", "asegurado": true, "representanteSub": "uuid",
   "integrantes": [ { "estudianteId": 5, "sub": "uuid", "legajo": "411626", "usuarioGithub": "usuario" } ] }
 // I03
 { "estudianteId": 5, "sub": "uuid", "activo": true, "comisionLectivaId": 10, "cursoLectivoId": 2, "equipoId": 7 }  // equipoId puede ser null
 // I04 -> 404 si la comisión no existe
 { "asignado": true }
 // I05
-{ "id": 10, "cursoLectivoId": 2, "cursoFechaInicio": "2026-03-01", "cursoFechaFin": "2026-12-15" }
+{ "id": 2, "anio": 2026, "fechaInicio": "2026-03-01", "fechaFin": "2026-12-15" }
 // I06
-[ { "id": 3, "comisionLectivaId": 10, "nombre": "Sprint 1", "tipo": "SPRINT", "orden": 1, "fechaInicio": "…", "fechaLimite": "…" } ]
+[ { "id": 3, "cursoLectivoId": 2, "nombre": "Sprint 1", "tipo": "SPRINT", "orden": 1, "fechaInicio": "…", "fechaLimite": "…" } ]
 // I07
-[ { "equipoId": 7, "actividadId": 3, "estado": "ENTREGADA", "tardia": false, "nota": null } ]
+[ { "equipoId": 7, "hitoId": 3, "estado": "ENTREGADA", "tardia": false, "nota": null } ]
 ```

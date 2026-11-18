@@ -32,7 +32,7 @@ Prioridad: **A** = imprescindible para el proceso central; **M** = media.
 | F03 | Gestionar usuarios (alta/baja lógica de docentes y estudiantes, con cuenta y clave temporal) | Jefe | A |
 | F04 | Conformar equipos (crear espacios, ingresar, salir, rechazar, asegurar, desasegurar) | Docente, alumnos | A |
 | F05 | Cargar usuario de GitHub | Alumno | A |
-| F06 | **Definir actividades** de una comisión (cambió: antes "definir hitos", a cargo del jefe) | Docente | A |
+| F06 | Definir hitos con ventana de fechas y fecha límite | Jefe | A |
 | F07 | Registrar entrega con enlace de Drive verificado | Representante | A |
 | F08 | Consultar entregas y su estado (incluye pendientes) | Docente, jefe, alumno | A |
 | F09 | Abrir entrega (enlace + advertencia de cambios posteriores) | Docente | A |
@@ -43,9 +43,8 @@ Prioridad: **A** = imprescindible para el proceso central; **M** = media.
 | F14 | Gestionar calendario (clases y presentaciones) | Docente; todos consultan | M |
 | F15 | Registrar asistencia por alumno o por equipo | Docente | M |
 | F16 | Consultar asistencia | Alumno, docente, jefe | M |
-| **F17** | **Gestionar el estado del proyecto del equipo** (en idea → en proceso → pendiente de aprobación → aprobado/rechazado/cancelado). **Nueva**, surge del diagrama de estados | Docente, representante | M |
 
-Línea de corte si falta tiempo (se comunica a la cátedra): primero F17, después F14–F16. Nunca el proceso central (F01–F13).
+Si falta tiempo, lo primero que se recorta es F14–F16 (prioridad media; se comunica a la cátedra). Nunca el proceso central (F01–F13).
 
 ## C. Requisitos no funcionales
 | ID | Requisito | Criterio verificable |

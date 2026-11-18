@@ -1,10 +1,10 @@
 # 10 — Patrones de diseño aplicados
 
 > Para estudiar: repositorio `BE-EXAMPLE-design-patterns-main`, carpetas `state/` y `adapter/` (cada una con su README y un ejemplo ejecutable). Los resúmenes de la cursada no cubren patrones.
-> Criterio del equipo: un patrón solo entra si resuelve un problema real. Se aplican **dos**.
+> Criterio del equipo: un patrón solo entra si resuelve un problema real. Se aplican **dos**: State y Adapter.
 
 ## 1. State — estados del `Equipo`
-**Problema.** El equipo tiene 7 estados (`DESASEGURADO`, `EN_IDEA`, `EN_PROCESO`, `PENDIENTE_APROBACION`, `RECHAZADO`, `APROBADO`, `CANCELADO`) y cada operación (ingresar, salir, rechazar ingresos, asegurar, desasegurar, iniciar, solicitar aprobación, aprobar, rechazar, reanudar, cancelar) está permitida solo en algunos. Con `if/switch` por estado, esa lógica se repetiría en cada método del `service` y cada estado nuevo obligaría a tocar todos.
+**Problema.** El equipo está `ABIERTO` o `ASEGURADO` y la validez de varias operaciones depende de ese estado: ingresar (RN08), salir o rechazar (RN09), baja de un integrante (RN05), asegurar (RN10), reabrir (RN11), registrar entrega (RN18). Con `if` sobre el estado, esa lógica se repetiría en varios métodos del `service`.
 
 **Diseño.**
 ```mermaid
@@ -13,20 +13,14 @@ classDiagram
         -EstadoEquipo estado
         +ingresar(estudiante)
         +salir(estudiante)
-        +asegurarPorRepresentante()
-        +asegurarPorDocente()
-        +desasegurar()
-        +ejecutarAccionProyecto(accion)
+        +asegurar()
+        +reabrir()
+        +permiteEntregas() boolean
     }
     class EstadoEquipo {
         <<enum persistido>>
-        DESASEGURADO
-        EN_IDEA
-        EN_PROCESO
-        PENDIENTE_APROBACION
-        RECHAZADO
-        APROBADO
-        CANCELADO
+        ABIERTO
+        ASEGURADO
         +comportamiento() ComportamientoEquipo
     }
     class ComportamientoEquipo {
@@ -34,30 +28,22 @@ classDiagram
         +ingresar(equipo, estudiante)
         +salir(equipo, estudiante)
         +asegurar(equipo)
-        +desasegurar(equipo)
-        +iniciar(equipo)
-        +solicitarAprobacion(equipo)
-        +aprobar(equipo)
-        +rechazar(equipo)
-        +reanudar(equipo)
-        +cancelar(equipo)
+        +reabrir(equipo)
+        +permiteEntregas() boolean
     }
-    class ComportamientoBase { +toda operación lanza ConflictoException RN-34 }
     Equipo --> EstadoEquipo
     EstadoEquipo ..> ComportamientoEquipo
-    ComportamientoEquipo <|.. ComportamientoBase
-    ComportamientoBase <|-- Desasegurado
-    ComportamientoBase <|-- EnIdea
-    ComportamientoBase <|-- EnProceso
-    ComportamientoBase <|-- PendienteAprobacion
-    ComportamientoBase <|-- Rechazado
+    ComportamientoEquipo <|.. Abierto
+    ComportamientoEquipo <|.. Asegurado
 ```
-- Se **persiste solo el enum** (`estado`). Cada valor del enum entrega su objeto de comportamiento (sin estado propio, reutilizable).
-- La clase base rechaza todo por defecto (409, RN-34); cada estado concreto **sobrescribe únicamente lo que permite** y cambia el estado del equipo. `Aprobado` y `Cancelado` no permiten nada.
-- La regla de *quién* puede (docente/representante, RN10) y las condiciones de cupo viven en el `service`; el estado solo decide **si la transición es válida**.
-- Los estados se prueban con unitarios puros (08).
+- Se **persiste solo el enum** (`equipo.estado`). Cada valor entrega su objeto de comportamiento (sin estado propio).
+- `Abierto` permite ingresar, salir y asegurar; rechaza reabrir y las entregas (409). `Asegurado` permite reabrir y las entregas; rechaza ingresar, salir y asegurar (409).
+- La regla de *quién* puede (docente o representante, RN10) y las condiciones de cupo viven en el `service`; el estado solo decide **si la operación es válida**.
+- Se prueba con unitarios puros (08).
 
-**Por qué no en `Entrega` ni `Snapshot`.** `Entrega` tiene dos estados persistidos y una sola restricción (corregir solo si `ENTREGADA`): un enum y un método de guarda alcanzan. En `Snapshot` los estados son datos del resultado, no cambian el comportamiento. Aplicar State ahí sería sobreingeniería.
+**Honestidad para la defensa.** Con dos estados la ganancia del patrón es modesta: un enum con guardas también funcionaría. Se mantiene porque concentra en un lugar reglas que hoy están repartidas (RN05, RN08–RN11, RN18), evita `if` duplicados y permite agregar un estado sin tocar los `service`. Se acota a una interfaz y dos clases para no caer en sobreingeniería.
+
+**Por qué no en `Entrega` ni `Snapshot`.** `Entrega` tiene dos estados persistidos y una sola restricción (corregir solo si `ENTREGADA`): una guarda alcanza. En `Snapshot` los estados son datos del resultado, no cambian el comportamiento.
 
 ## 2. Adapter — acceso a otros servicios y sistemas externos
 **Problema.** Los servicios hablan con sistemas que no controlamos (Drive, GitHub, Keycloak) y con otros servicios nuestros, cada uno con su formato, autenticación, paginación y errores. Si el `service` los usara directo, las reglas de negocio quedarían atadas a esos detalles y no se podrían testear sin red.

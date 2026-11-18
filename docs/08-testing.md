@@ -24,7 +24,7 @@
 
 ## Prioridad si falta tiempo
 1. Reglas del proceso central: RN17–RN24, RN29, RN30.
-2. Equipos y estados: RN06–RN11, RN34.
+2. Equipos y estados: RN05–RN11.
 3. Degradación: RN22, RN28, RN33.
 4. El resto de las RN.
 Mínimo por servicio antes de la defensa: tests de las reglas de su proceso central y 401/403 de cada controlador.

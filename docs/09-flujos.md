@@ -11,16 +11,16 @@ sequenceDiagram
     participant CAT as ms-catedra
     participant DR as Google Drive
     participant DB as BD documentacion
-    R->>GW: POST /api/documentacion/actividades/{id}/entregas (JWT)
+    R->>GW: POST /api/documentacion/hitos/{id}/entregas (JWT)
     GW->>GW: valida firma, iss, vencimiento y rol ALUMNO
     GW->>DOC: reenvía con X-Correlation-Id
-    DOC->>DOC: busca la actividad (404 si no existe)
+    DOC->>DOC: busca el hito (404 si no existe)
     DOC->>CAT: I03 estudiante por sub, I01 equipo
     alt ms-catedra no responde (timeout/5xx)
         DOC-->>R: 503 ProblemDetail
     end
-    DOC->>DOC: RN18 representante, equipo asegurado, misma comisión
-    DOC->>DB: ¿ya existe entrega (actividad, equipo)?
+    DOC->>DOC: RN18 representante, equipo asegurado, hito de su curso
+    DOC->>DB: ¿ya existe entrega (hito, equipo)?
     alt existe
         DOC-->>R: 409 (RN29)
     end
@@ -33,7 +33,7 @@ sequenceDiagram
     DOC->>DB: guarda ENTREGA + ARCHIVO_VERIFICADO (una transacción)
     DOC-->>R: 201 ENTREGADA, tardia según fecha límite (RN21)
 ```
-Las consultas a `ms-catedra` y Drive ocurren **antes** de la transacción. Si dos pedidos llegan a la vez, `UNIQUE(actividad_id, equipo_id)` rechaza al segundo (409).
+Las consultas a `ms-catedra` y Drive ocurren **antes** de la transacción. Si dos pedidos llegan a la vez, `UNIQUE(hito_id, equipo_id)` rechaza al segundo (409).
 
 ## 2. Dashboard con degradación (S10)
 ```mermaid
@@ -91,7 +91,7 @@ sequenceDiagram
     SEG->>SEG: token de servicio si es la tarea (Client Credentials)
     loop por cada repositorio vinculado
         SEG->>CAT: I01 equipo (integrantes y usuarios de GitHub)
-        SEG->>DOC: I06 actividades SPRINT de la comisión
+        SEG->>DOC: I06 hitos SPRINT del curso
         loop por cada sprint
             SEG->>GH: commits de la rama en [inicio, límite]
             alt todo responde
