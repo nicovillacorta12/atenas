@@ -21,3 +21,8 @@ spring:
         provider:
           keycloak:
             token-uri: http://keycloak:8080/realms/atenas/protocol/openid-connect/token
+
+atenas:
+  keycloak:
+    admin:
+      base-url: http://keycloak:8080/admin/realms/atenas

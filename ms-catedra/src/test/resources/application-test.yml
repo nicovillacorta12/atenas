@@ -15,3 +15,19 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: http://localhost:8081/realms/atenas/protocol/openid-connect/certs
+      client:
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: atenas-catedra-admin
+            client-secret: secreto-test
+            authorization-grant-type: client_credentials
+        provider:
+          keycloak:
+            token-uri: http://localhost:8081/realms/atenas/protocol/openid-connect/token
+
+atenas:
+  keycloak:
+    clave-temporal: clave-temporal-test
+    admin:
+      base-url: http://localhost:8081/admin/realms/atenas

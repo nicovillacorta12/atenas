@@ -42,3 +42,7 @@ atenas:
   http:
     timeout-conexion: 2s
     timeout-lectura: 5s
+  keycloak:
+    clave-temporal: ${CLAVE_TEMPORAL}
+    admin:
+      base-url: http://localhost:8081/admin/realms/atenas

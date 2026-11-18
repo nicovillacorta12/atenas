@@ -187,7 +187,7 @@
     },
     {
       "name": "01 Estructura y usuarios",
-      "description": "Cursos lectivos, comisiones, docentes y estudiantes. Se completa al implementar F02 y F03.",
+      "description": "Cursos lectivos, comisiones y comisiones lectivas (F02). Docentes y asignaciones (F03 parte 1); estudiantes quedan para F03 parte 2.",
       "auth": {
         "type": "oauth2",
         "oauth2": [
@@ -238,7 +238,508 @@
           }
         ]
       },
-      "item": []
+      "item": [
+        {
+          "name": "C01 Crear curso lectivo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C01 responde 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('C01 devuelve Location', function () {",
+                  "    pm.response.to.have.header('Location');",
+                  "});",
+                  "pm.test('C01 guarda cursoLectivoId', function () {",
+                  "    pm.environment.set('cursoLectivoId', pm.response.json().id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"anio\": 2026,\n  \"fechaInicio\": \"2026-03-01\",\n  \"fechaFin\": \"2026-12-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/cursos-lectivos",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "cursos-lectivos"
+              ]
+            },
+            "description": "Crea el curso lectivo base y guarda su id para las siguientes requests."
+          }
+        },
+        {
+          "name": "C02 Listar cursos lectivos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C02 responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('C02 devuelve una lista', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/cursos-lectivos",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "cursos-lectivos"
+              ]
+            },
+            "description": "Lista los cursos lectivos visibles para el jefe o un docente."
+          }
+        },
+        {
+          "name": "C03 Crear comisión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C03 responde 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('C03 devuelve Location', function () {",
+                  "    pm.response.to.have.header('Location');",
+                  "});",
+                  "pm.test('C03 guarda comisionId', function () {",
+                  "    pm.environment.set('comisionId', pm.response.json().id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Comisión 1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/comisiones",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "comisiones"
+              ]
+            },
+            "description": "Crea la comisión permanente que luego se habilita en el curso."
+          }
+        },
+        {
+          "name": "C04 Listar comisiones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C04 responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('C04 devuelve una lista', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/comisiones",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "comisiones"
+              ]
+            },
+            "description": "Lista las comisiones permanentes. Solo el jefe tiene acceso."
+          }
+        },
+        {
+          "name": "C05 Habilitar comisión en el curso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C05 responde 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('C05 devuelve Location', function () {",
+                  "    pm.response.to.have.header('Location');",
+                  "});",
+                  "pm.test('C05 guarda comisionLectivaId', function () {",
+                  "    pm.environment.set('comisionLectivaId', pm.response.json().id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comisionId\": {{comisionId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/cursos-lectivos/{{cursoLectivoId}}/comisiones-lectivas",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "cursos-lectivos",
+                "{{cursoLectivoId}}",
+                "comisiones-lectivas"
+              ]
+            },
+            "description": "Habilita la comisión creada en el curso lectivo y guarda el id de la comisión lectiva."
+          }
+        },
+        {
+          "name": "C06 Listar comisiones lectivas del curso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C06 responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('C06 devuelve una lista', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/cursos-lectivos/{{cursoLectivoId}}/comisiones-lectivas",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "cursos-lectivos",
+                "{{cursoLectivoId}}",
+                "comisiones-lectivas"
+              ]
+            },
+            "description": "Lista las comisiones habilitadas en el curso creado por la colección."
+          }
+        },
+        {
+          "name": "C07 Crear docente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C07 responde 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('C07 devuelve Location', function () {",
+                  "    pm.response.to.have.header('Location');",
+                  "});",
+                  "pm.test('C07 guarda docenteId', function () {",
+                  "    pm.environment.set('docenteId', pm.response.json().id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Docente\",\n  \"apellido\": \"Prueba\",\n  \"mail\": \"docente{{$timestamp}}@atenas.local\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/docentes",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "docentes"
+              ]
+            },
+            "description": "Crea un docente con mail único y su cuenta de Keycloak; guarda el id local."
+          }
+        },
+        {
+          "name": "C08 Listar docentes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C08 responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('C08 devuelve una lista', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/docentes",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "docentes"
+              ]
+            },
+            "description": "Lista los docentes registrados. Solo el jefe tiene acceso."
+          }
+        },
+        {
+          "name": "C10 Asignar docente a la comisión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C10 responde 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('C10 devuelve Location', function () {",
+                  "    pm.response.to.have.header('Location');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docenteId\": {{docenteId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/comisiones-lectivas/{{comisionLectivaId}}/docentes",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "comisiones-lectivas",
+                "{{comisionLectivaId}}",
+                "docentes"
+              ]
+            },
+            "description": "Asigna el docente creado a la comisión lectiva creada en F02."
+          }
+        },
+        {
+          "name": "C09 Dar de baja al docente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C09 responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('C09 deja al docente inactivo', function () {",
+                  "    pm.expect(pm.response.json().activo).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/docentes/{{docenteId}}/baja",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "docentes",
+                "{{docenteId}}",
+                "baja"
+              ]
+            },
+            "description": "Da de baja lógicamente al docente y deshabilita su cuenta de Keycloak."
+          }
+        }
+      ]
     },
     {
       "name": "02 Equipos",
