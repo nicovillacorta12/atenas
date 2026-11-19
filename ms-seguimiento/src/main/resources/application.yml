@@ -38,3 +38,11 @@ atenas:
   http:
     timeout-conexion: 2s
     timeout-lectura: 5s
+  github:
+    url-base: https://api.github.com
+    version-api: "2022-11-28"
+    # Token de servicio de GitHub (5000 pedidos/hora). Vacío = sin autenticar.
+    token: ${GITHUB_TOKEN:}
+  actividad:
+    # Fracción del promedio de commits por integrante bajo la cual se marca "baja contribución" (1/2).
+    umbral-baja-contribucion: 0.5
