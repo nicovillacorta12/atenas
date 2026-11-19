@@ -13,6 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import static ar.edu.utn.frc.atenas.commons.seguridad.Roles.ALUMNO;
 import static ar.edu.utn.frc.atenas.commons.seguridad.Roles.DOCENTE;
 import static ar.edu.utn.frc.atenas.commons.seguridad.Roles.JEFE_CATEDRA;
+import static ar.edu.utn.frc.atenas.commons.seguridad.Roles.SERVICIO;
 
 @Configuration
 @EnableWebSecurity
@@ -39,6 +40,14 @@ public class SecurityConfig {
                                 "/api/documentacion/swagger-ui/**",
                                 "/webjars/**")
                         .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/documentacion/hitos")
+                        .hasRole(JEFE_CATEDRA)
+                        .requestMatchers(HttpMethod.GET, "/api/documentacion/hitos")
+                        .hasAnyRole(JEFE_CATEDRA, DOCENTE, ALUMNO)
+                        .requestMatchers(HttpMethod.POST, "/api/documentacion/hitos/*/entregas")
+                        .hasRole(ALUMNO)
+                        .requestMatchers(HttpMethod.GET, "/internal/hitos")
+                        .hasAnyRole(JEFE_CATEDRA, DOCENTE, SERVICIO)
                         .requestMatchers(HttpMethod.GET, "/api/documentacion/entregas")
                         .hasAnyRole(JEFE_CATEDRA, DOCENTE)
                         .requestMatchers(HttpMethod.GET, "/api/documentacion/mi-equipo/entregas")

@@ -46,6 +46,12 @@ public class Entrega {
     @Column(nullable = false)
     private Boolean tardia;
 
+    @Column(name = "fecha_entrega")
+    private Instant fechaEntrega;
+
+    @Column(name = "registrada_por_sub")
+    private String registradaPorSub;
+
     private Integer nota;
 
     @Column(name = "modificado_post_entrega")
@@ -108,6 +114,22 @@ public class Entrega {
 
     public void setTardia(Boolean tardia) {
         this.tardia = tardia;
+    }
+
+    public Instant getFechaEntrega() {
+        return fechaEntrega;
+    }
+
+    public void setFechaEntrega(Instant fechaEntrega) {
+        this.fechaEntrega = fechaEntrega;
+    }
+
+    public String getRegistradaPorSub() {
+        return registradaPorSub;
+    }
+
+    public void setRegistradaPorSub(String registradaPorSub) {
+        this.registradaPorSub = registradaPorSub;
     }
 
     public Integer getNota() {
