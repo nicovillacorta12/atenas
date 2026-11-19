@@ -1,8 +1,10 @@
 package ar.edu.utn.frc.atenas.seguimiento.config;
 
 import ar.edu.utn.frc.atenas.commons.seguridad.ConversorJwtKeycloak;
+import ar.edu.utn.frc.atenas.commons.seguridad.Roles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -34,6 +36,9 @@ public class SecurityConfig {
                                 "/api/seguimiento/swagger-ui/**",
                                 "/webjars/**")
                         .permitAll()
+                        // S07: el Gateway ya filtra por rol; se vuelve a validar acá (defensa en profundidad).
+                        .requestMatchers(HttpMethod.PUT, "/api/seguimiento/equipos/*/repositorio")
+                        .hasRole(Roles.ALUMNO)
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(recurso -> recurso
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(conversorJwtKeycloak)));

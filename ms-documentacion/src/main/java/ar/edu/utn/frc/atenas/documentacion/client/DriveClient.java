@@ -1,22 +1,13 @@
 package ar.edu.utn.frc.atenas.documentacion.client;
 
-import ar.edu.utn.frc.atenas.documentacion.dto.externo.ArchivoDrive;
-
 /**
- * Adaptador hacia Google Drive API v3. El service depende de esta interfaz para
- * poder verificar archivos sin acoplarse a la API externa.
+ * Adaptador de salida hacia Google Drive.
+ *
+ * D06 solo necesita leer los metadatos actuales de un archivo para comparar
+ * su modifiedTime. Las fallas del proveedor se informan mediante excepciones
+ * de commons y el servicio decide degradar a NO_VERIFICADO.
  */
 public interface DriveClient {
 
-    /**
-     * Extrae el fileId de un enlace habitual de Drive/Docs. Si no se reconoce,
-     * lanza SolicitudInvalidaException (400).
-     */
-    String extraerFileId(String enlace);
-
-    /**
-     * Obtiene los metadatos del archivo. Lanza ArchivoNoAccesibleException si no
-     * existe o es privado, y ServicioNoDisponibleException si Drive falla.
-     */
-    ArchivoDrive obtenerArchivo(String fileId);
+    ArchivoDrive obtenerArchivo(String driveFileId);
 }

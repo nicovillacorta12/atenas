@@ -1,32 +1,47 @@
 package ar.edu.utn.frc.atenas.documentacion.controller;
 
-import ar.edu.utn.frc.atenas.documentacion.dto.EntregaResponse;
-import ar.edu.utn.frc.atenas.documentacion.dto.RegistrarEntregaRequest;
-import ar.edu.utn.frc.atenas.documentacion.service.EntregaService;
-import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import ar.edu.utn.frc.atenas.documentacion.dto.EntregaEstadoResponse;
+import ar.edu.utn.frc.atenas.documentacion.service.EntregaConsultaService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URI;
+import java.util.List;
 
+/** Consultas públicas de entregas: D04 y D05. */
 @RestController
-@RequestMapping("/api/documentacion/hitos")
+@RequestMapping("/api/documentacion")
+@Tag(name = "Entregas")
 public class EntregaController {
 
-    private final EntregaService entregaService;
+    private final EntregaConsultaService entregaConsultaService;
 
-    public EntregaController(EntregaService entregaService) {
-        this.entregaService = entregaService;
+    public EntregaController(EntregaConsultaService entregaConsultaService) {
+        this.entregaConsultaService = entregaConsultaService;
     }
 
-    @PostMapping("/{id}/entregas")
-    public ResponseEntity<EntregaResponse> registrar(@PathVariable Long id,
-                                                     @Valid @RequestBody RegistrarEntregaRequest request) {
-        EntregaResponse response = entregaService.registrar(id, request);
-        return ResponseEntity.created(URI.create("/api/documentacion/entregas/" + response.id())).body(response);
+    @GetMapping("/entregas")
+    @Operation(summary = "Lista entregas y pendientes de una comisión, opcionalmente por hito")
+    @ApiResponse(responseCode = "200", description = "Listado de estados de entrega")
+    @ApiResponse(responseCode = "403", description = "El docente no pertenece a la comisión")
+    @ApiResponse(responseCode = "404", description = "El hito no pertenece al curso")
+    @ApiResponse(responseCode = "503", description = "ms-catedra no está disponible")
+    public List<EntregaEstadoResponse> listarPorComision(
+            @RequestParam Long comisionLectivaId,
+            @RequestParam(required = false) Long hitoId) {
+        return entregaConsultaService.listarPorComision(comisionLectivaId, hitoId);
+    }
+
+    @GetMapping("/mi-equipo/entregas")
+    @Operation(summary = "Lista las entregas del equipo del alumno autenticado")
+    @ApiResponse(responseCode = "200", description = "Listado de estados de entrega del equipo")
+    @ApiResponse(responseCode = "403", description = "El usuario no es alumno")
+    @ApiResponse(responseCode = "503", description = "ms-catedra no está disponible")
+    public List<EntregaEstadoResponse> listarMiEquipo() {
+        return entregaConsultaService.listarMiEquipo();
     }
 }

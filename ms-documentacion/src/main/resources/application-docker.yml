@@ -11,3 +11,8 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: http://keycloak:8080/realms/atenas/protocol/openid-connect/certs
+
+atenas:
+  clientes:
+    catedra:
+      url: http://ms-catedra:8080

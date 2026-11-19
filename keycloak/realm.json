@@ -8,7 +8,7 @@
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": false,
   "editUsernameAllowed": false,
-  "accessTokenLifespan": 300,
+  "accessTokenLifespan": 14400,
   "accessTokenLifespanForImplicitFlow": 300,
   "accessCodeLifespan": 60,
   "ssoSessionIdleTimeout": 1800,

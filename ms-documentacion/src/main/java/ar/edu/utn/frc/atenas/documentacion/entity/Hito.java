@@ -12,14 +12,14 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 
 /**
- * Hito del curso (informe inicial, sprint o documento final). Lo define el jefe.
- * cursoLectivoId se guarda sin FK porque cruza esquemas (ms-catedra).
+ * Hito de un curso lectivo.
+ *
+ * El curso pertenece a ms-catedra, por eso se guarda solo su id y no una
+ * relación JPA entre esquemas.
  */
 @Entity
 @Table(name = "hito")
 public class Hito {
-
-    public enum Tipo { INFORME_INICIAL, SPRINT, DOCUMENTO_FINAL }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,14 +28,14 @@ public class Hito {
     @Column(name = "curso_lectivo_id", nullable = false)
     private Long cursoLectivoId;
 
-    @Column(name = "nombre", nullable = false)
+    @Column(nullable = false)
     private String nombre;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo", nullable = false)
-    private Tipo tipo;
+    @Column(nullable = false)
+    private TipoHito tipo;
 
-    @Column(name = "orden", nullable = false)
+    @Column(nullable = false)
     private Integer orden;
 
     @Column(name = "fecha_inicio", nullable = false)
@@ -44,20 +44,73 @@ public class Hito {
     @Column(name = "fecha_limite", nullable = false)
     private Instant fechaLimite;
 
-    public Hito() { }
+    public Hito() {
+    }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Long getCursoLectivoId() { return cursoLectivoId; }
-    public void setCursoLectivoId(Long cursoLectivoId) { this.cursoLectivoId = cursoLectivoId; }
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
-    public Tipo getTipo() { return tipo; }
-    public void setTipo(Tipo tipo) { this.tipo = tipo; }
-    public Integer getOrden() { return orden; }
-    public void setOrden(Integer orden) { this.orden = orden; }
-    public Instant getFechaInicio() { return fechaInicio; }
-    public void setFechaInicio(Instant fechaInicio) { this.fechaInicio = fechaInicio; }
-    public Instant getFechaLimite() { return fechaLimite; }
-    public void setFechaLimite(Instant fechaLimite) { this.fechaLimite = fechaLimite; }
+    public Hito(Long id, Long cursoLectivoId, String nombre, TipoHito tipo,
+                Integer orden, Instant fechaInicio, Instant fechaLimite) {
+        this.id = id;
+        this.cursoLectivoId = cursoLectivoId;
+        this.nombre = nombre;
+        this.tipo = tipo;
+        this.orden = orden;
+        this.fechaInicio = fechaInicio;
+        this.fechaLimite = fechaLimite;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getCursoLectivoId() {
+        return cursoLectivoId;
+    }
+
+    public void setCursoLectivoId(Long cursoLectivoId) {
+        this.cursoLectivoId = cursoLectivoId;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public TipoHito getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(TipoHito tipo) {
+        this.tipo = tipo;
+    }
+
+    public Integer getOrden() {
+        return orden;
+    }
+
+    public void setOrden(Integer orden) {
+        this.orden = orden;
+    }
+
+    public Instant getFechaInicio() {
+        return fechaInicio;
+    }
+
+    public void setFechaInicio(Instant fechaInicio) {
+        this.fechaInicio = fechaInicio;
+    }
+
+    public Instant getFechaLimite() {
+        return fechaLimite;
+    }
+
+    public void setFechaLimite(Instant fechaLimite) {
+        this.fechaLimite = fechaLimite;
+    }
 }
