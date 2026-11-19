@@ -27,24 +27,28 @@ JDK 21, Maven 3.9, Docker Desktop (Compose v2). Credenciales: token de GitHub y 
 
 ## Colección Postman
 
-1. En Postman, importá `postman/atenas.postman_environment.json` y `postman/atenas.postman_collection.json`.
-2. Seleccioná el environment `Atenas Local` antes de ejecutar la colección.
-3. Abrí la carpeta `00 Smoke`, elegí el request `GET equipo interno con token`, y en `Auth` hacé `Get New Access Token`:
-   - `Auth URL`: `{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth`
-   - `Access Token URL`: `{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token`
-   - `Client ID`: `{{clientId}}`
-   - `Redirect URI`: `https://oauth.pstmn.io/v1/callback`
-   - `Scope`: `openid profile email`
-4. Postman redirige a Keycloak; ingresá con el usuario que necesités (`jefe` para el smoke). Postman guarda el token en su propio almacenamiento, no en el environment.
-5. Los usuarios nuevos creados por el sistema usan la clave temporal y Keycloak les exige cambiarla.
-6. Ejecutá siempre `00 Smoke` primero:
-   - `GET /api/documentacion/v3/api-docs` sin token → `200`
-   - `POST /api/documentacion/hitos/1/entregas` sin token → `401`
-   - `GET /internal/equipos/1` con token → `404`
-7. La carpeta `01 Estructura y usuarios` contiene las requests C01–C13 de F02 y F03. La carpeta `02 Equipos` contiene C16–C22 de F04. La carpeta `05 Consultas del alumno` contiene C14–C15.
-8. Para C14/C15, C19 y C20, iniciá sesión con un alumno de prueba y guardá el token como `token-alumno-b`. Para C16, C21 y C22, usá un token de docente asignado guardado como `token-docente-a`. Si el alumno se creó con clave temporal, Keycloak le pedirá cambiarla en el primer inicio.
+1. Importá `postman/atenas.postman_environment.json` y `postman/atenas.postman_collection.json`, y seleccioná el environment `Atenas Local`.
+2. Cada request declara su propia autenticación. Las requests de negocio usan **Bearer Token** con una variable `{{token-<usuario>}}`; ninguna hereda el token de la carpeta.
+3. **(a) Token del jefe.** Abrí `00 Tokens → Token jefe`, pestaña **Authorization**, y usá **Get New Access Token** con el usuario `jefe` y la clave `JEFE_PASSWORD_INICIAL` del `.env`. Copiá el **Access Token** y pegalo en la variable `token-jefe` del environment.
+4. **(b) Ejecutar `01 Estructura y usuarios`.** Crea el curso, las comisiones, los docentes y los estudiantes. Todas sus requests usan `token-jefe`.
+5. **(c) Obtener los tokens de docentes y alumnos.** Con la carpeta `00 Tokens`:
+   - `Token docente A` → `docente-a@atenas.local` → variable `token-docente-a`
+   - `Token docente B` → `docente-b@atenas.local` → variable `token-docente-b`
+   - `Token representante` → `400001@sistemas.frc.utn.edu.ar` → variable `token-representante`
+   - `Token integrante` → `400002@sistemas.frc.utn.edu.ar` → variable `token-integrante`
+   - `Token alumno B` → `400003@sistemas.frc.utn.edu.ar` → variable `token-alumno-b`
+   Cada usuario nuevo inicia sesión con `CLAVE_TEMPORAL` y Keycloak le pide cambiarla. Cerrá la sesión de Keycloak entre un usuario y otro para no reutilizar el token anterior.
+6. **(d) Ejecutar `02 Equipos`, `06 Reglas de dominio` y `07 Negativos`**, en ese orden. La carpeta `05 Consultas del alumno` es opcional y usa `token-alumno-b`.
+7. Los access tokens vencen a las **4 horas** (`accessTokenLifespan` del realm de desarrollo). Si una request devuelve `401`, regenerá el token desde `00 Tokens` y actualizá su variable.
+8. Para que Keycloak tome el cambio de `accessTokenLifespan`, hay que recrear el volumen:
+   ```powershell
+   docker compose down -v
+   docker compose up --build -d
+   ```
+   Eso borra la base y los usuarios: hay que volver a ejecutar `01` y regenerar todos los tokens.
+9. `00 Smoke` es opcional. Sus dos primeras requests no llevan token; la tercera usa `token-jefe`.
 
-El environment no contiene claves ni tokens: solo URLs, IDs vacíos y datos de Drive/GitHub marcados como `completar`. Los requests generan `X-Correlation-Id` automáticamente con `{{$guid}}`.
+El environment no contiene claves ni tokens: solo URLs, IDs vacíos, variables de token vacías y datos de Drive/GitHub marcados como `completar`. Los tokens se pegan en **Current Value** y no se versionan. Los requests generan `X-Correlation-Id` automáticamente con `{{$guid}}`.
 
 ## Documentación
 Empezar por [`docs/README.md`](docs/README.md).
