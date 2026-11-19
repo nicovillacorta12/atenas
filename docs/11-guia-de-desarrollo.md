@@ -58,7 +58,14 @@ cd ms-catedra && mvn spring-boot:run -Dspring-boot.run.profiles=dev
 Si cambia `atenas-commons`: `mvn clean install` ahí y volver a compilar el servicio.
 
 ## Postman
-`postman/atenas.postman_collection.json` y `postman/atenas.postman_environment.json` (sin claves). Carpetas numeradas por orden de ejecución: `01 Estructura y usuarios`, `02 Equipos`, `03 Calendario y repositorio`, `04 Proceso principal`, `05 Consultas del alumno`, `06 Reglas de dominio`, `07 Negativos`, `08 Fallas controladas`. Autenticación: Authorization Code con el cliente `atenas-postman` (callback `https://oauth.pstmn.io/v1/callback`), un token con nombre por usuario (`token-jefe`, `token-docente-a`, `token-docente-b`, `token-representante`, `token-integrante`, `token-alumno-b`). Cada usuario nuevo inicia sesión con `CLAVE_TEMPORAL` y Keycloak le pide cambiarla. Cada request lleva `X-Correlation-Id: {{$guid}}` y tests que verifican código y campos y guardan IDs en variables. Parte de una base vacía (`down -v`).
+`postman/atenas.postman_collection.json` y `postman/atenas.postman_environment.json` (sin claves). Carpetas numeradas por orden de ejecución: `01 Estructura y usuarios`, `02 Equipos`, `03 Calendario y repositorio`, `04 Proceso principal`, `05 Consultas del alumno`, `06 Reglas de dominio`, `07 Negativos`, `08 Fallas controladas`. Autenticación:
+**Autenticación (convención para TODAS las requests).**
+- Cada request declara su propia autorización: **Bearer Token con `{{token-<usuario>}}`**. Ninguna request hereda el token de la carpeta ni del jefe. Las únicas sin token son las que prueban el 401 y la documentación OpenAPI (*No Auth*).
+- Variables del environment (vacías en el archivo versionado): `token-jefe`, `token-docente-a`, `token-docente-b`, `token-representante`, `token-integrante`, `token-alumno-b`.
+- Carpeta `00 Tokens`: un request por usuario configurado con OAuth 2.0 Authorization Code (cliente `atenas-postman`, callback `https://oauth.pstmn.io/v1/callback`) para obtener el token con un clic ("Get New Access Token") y pegarlo en su variable. El flujo es interactivo (navegador): no se puede automatizar dentro de una corrida.
+- **Orden:** primero `token-jefe`; después se ejecuta la carpeta 01 (crea docentes y estudiantes); recién entonces se obtienen los tokens de docentes y alumnos. Cada usuario nuevo inicia sesión con `CLAVE_TEMPORAL` y Keycloak le pide cambiarla (por eso se usa Authorization Code y no un flujo con usuario y clave directos).
+- Los access tokens vencen a las **4 horas**. En el realm de desarrollo se fija esa vida (`accessTokenLifespan`) para poder preparar y exponer sin 401 a mitad; si vence, se vuelve a obtener el token.
+Cada request lleva `X-Correlation-Id: {{$guid}}` y tests que verifican código y campos y guardan IDs en variables. Parte de una base vacía (`down -v`).
 **Regla:** cada historia agrega al Postman las requests de lo que implementa.
 
 ## Git
