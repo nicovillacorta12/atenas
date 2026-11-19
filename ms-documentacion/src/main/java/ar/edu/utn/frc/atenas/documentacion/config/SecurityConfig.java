@@ -3,11 +3,16 @@ package ar.edu.utn.frc.atenas.documentacion.config;
 import ar.edu.utn.frc.atenas.commons.seguridad.ConversorJwtKeycloak;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+
+import static ar.edu.utn.frc.atenas.commons.seguridad.Roles.ALUMNO;
+import static ar.edu.utn.frc.atenas.commons.seguridad.Roles.DOCENTE;
+import static ar.edu.utn.frc.atenas.commons.seguridad.Roles.JEFE_CATEDRA;
 
 @Configuration
 @EnableWebSecurity
@@ -34,6 +39,12 @@ public class SecurityConfig {
                                 "/api/documentacion/swagger-ui/**",
                                 "/webjars/**")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/documentacion/entregas")
+                        .hasAnyRole(JEFE_CATEDRA, DOCENTE)
+                        .requestMatchers(HttpMethod.GET, "/api/documentacion/mi-equipo/entregas")
+                        .hasRole(ALUMNO)
+                        .requestMatchers(HttpMethod.GET, "/internal/entregas")
+                        .hasAnyRole(JEFE_CATEDRA, DOCENTE)
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(recurso -> recurso
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(conversorJwtKeycloak)));
