@@ -10,6 +10,7 @@ import ar.edu.utn.frc.atenas.documentacion.client.CatedraClient;
 import ar.edu.utn.frc.atenas.documentacion.dto.CrearHitoRequest;
 import ar.edu.utn.frc.atenas.documentacion.dto.HitoResponse;
 import ar.edu.utn.frc.atenas.documentacion.entity.Hito;
+import ar.edu.utn.frc.atenas.documentacion.entity.TipoHito;
 import ar.edu.utn.frc.atenas.documentacion.repository.HitoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,15 +72,15 @@ public class HitoService {
         if (cursoLectivoId == null) {
             throw new ar.edu.utn.frc.atenas.commons.error.SolicitudInvalidaException("cursoLectivoId es obligatorio");
         }
-        return hitoRepository.findByCursoLectivoIdOrderByOrdenAsc(cursoLectivoId).stream()
+        return hitoRepository.findByCursoLectivoIdOrderByOrdenAscIdAsc(cursoLectivoId).stream()
                 .map(this::aResponse).toList();
     }
 
     @Transactional(readOnly = true)
     public java.util.List<HitoResponse> internos(Long cursoLectivoId, String tipo) {
-        var lista = hitoRepository.findByCursoLectivoIdOrderByOrdenAsc(cursoLectivoId);
+        var lista = hitoRepository.findByCursoLectivoIdOrderByOrdenAscIdAsc(cursoLectivoId);
         if (tipo != null && !tipo.isBlank()) {
-            Hito.Tipo t = Hito.Tipo.valueOf(tipo);
+            TipoHito t = TipoHito.valueOf(tipo);
             lista = lista.stream().filter(h -> h.getTipo() == t).toList();
         }
         return lista.stream().map(this::aResponse).toList();

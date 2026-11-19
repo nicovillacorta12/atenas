@@ -10,6 +10,7 @@ import ar.edu.utn.frc.atenas.commons.tiempo.ZonaHoraria;
 import ar.edu.utn.frc.atenas.documentacion.client.CatedraClient;
 import ar.edu.utn.frc.atenas.documentacion.dto.CrearHitoRequest;
 import ar.edu.utn.frc.atenas.documentacion.dto.externo.CursoLectivoDto;
+import ar.edu.utn.frc.atenas.documentacion.entity.TipoHito;
 import ar.edu.utn.frc.atenas.documentacion.entity.Hito;
 import ar.edu.utn.frc.atenas.documentacion.repository.HitoRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,7 +62,7 @@ class HitoServiceTest {
             h.setId(10L);
             return h;
         });
-        CrearHitoRequest req = new CrearHitoRequest(2L, "Sprint 1", Hito.Tipo.SPRINT, 1,
+        CrearHitoRequest req = new CrearHitoRequest(2L, "Sprint 1", TipoHito.SPRINT, 1,
                 Instant.parse("2026-04-01T00:00:00Z"), Instant.parse("2026-04-30T00:00:00Z"));
         var res = service.crear(req);
         assertThat(res.id()).isEqualTo(10L);
@@ -70,7 +71,7 @@ class HitoServiceTest {
     @Test
     void crear_noJefe() {
         when(usuarioActual.tieneRol(Roles.JEFE_CATEDRA)).thenReturn(false);
-        CrearHitoRequest req = new CrearHitoRequest(2L, "Sprint 1", Hito.Tipo.SPRINT, 1,
+        CrearHitoRequest req = new CrearHitoRequest(2L, "Sprint 1", TipoHito.SPRINT, 1,
                 Instant.parse("2026-04-01T00:00:00Z"), Instant.parse("2026-04-30T00:00:00Z"));
         assertThatThrownBy(() -> service.crear(req)).isInstanceOf(AccesoDenegadoException.class);
     }
@@ -79,7 +80,7 @@ class HitoServiceTest {
     void crear_cursoInexistente() {
         when(usuarioActual.tieneRol(Roles.JEFE_CATEDRA)).thenReturn(true);
         when(catedraClient.obtenerCurso(2L)).thenThrow(new NoEncontradoException("no existe"));
-        CrearHitoRequest req = new CrearHitoRequest(2L, "Sprint 1", Hito.Tipo.SPRINT, 1,
+        CrearHitoRequest req = new CrearHitoRequest(2L, "Sprint 1", TipoHito.SPRINT, 1,
                 Instant.parse("2026-04-01T00:00:00Z"), Instant.parse("2026-04-30T00:00:00Z"));
         assertThatThrownBy(() -> service.crear(req)).isInstanceOf(NoEncontradoException.class);
     }
@@ -88,7 +89,7 @@ class HitoServiceTest {
     void crear_fechasInvertidas() {
         when(usuarioActual.tieneRol(Roles.JEFE_CATEDRA)).thenReturn(true);
         when(catedraClient.obtenerCurso(2L)).thenReturn(curso());
-        CrearHitoRequest req = new CrearHitoRequest(2L, "Sprint 1", Hito.Tipo.SPRINT, 1,
+        CrearHitoRequest req = new CrearHitoRequest(2L, "Sprint 1", TipoHito.SPRINT, 1,
                 Instant.parse("2026-05-01T00:00:00Z"), Instant.parse("2026-04-30T00:00:00Z"));
         assertThatThrownBy(() -> service.crear(req)).isInstanceOf(SolicitudInvalidaException.class);
     }
@@ -97,7 +98,7 @@ class HitoServiceTest {
     void crear_msCatedraCaido() {
         when(usuarioActual.tieneRol(Roles.JEFE_CATEDRA)).thenReturn(true);
         when(catedraClient.obtenerCurso(2L)).thenThrow(new ServicioNoDisponibleException("caido"));
-        CrearHitoRequest req = new CrearHitoRequest(2L, "Sprint 1", Hito.Tipo.SPRINT, 1,
+        CrearHitoRequest req = new CrearHitoRequest(2L, "Sprint 1", TipoHito.SPRINT, 1,
                 Instant.parse("2026-04-01T00:00:00Z"), Instant.parse("2026-04-30T00:00:00Z"));
         assertThatThrownBy(() -> service.crear(req)).isInstanceOf(ServicioNoDisponibleException.class);
     }
@@ -113,11 +114,11 @@ class HitoServiceTest {
         h.setId(1L);
         h.setCursoLectivoId(2L);
         h.setNombre("Sprint 1");
-        h.setTipo(Hito.Tipo.SPRINT);
+        h.setTipo(TipoHito.SPRINT);
         h.setOrden(1);
         h.setFechaInicio(Instant.parse("2026-04-01T00:00:00Z"));
         h.setFechaLimite(Instant.parse("2026-04-30T00:00:00Z"));
-        when(hitoRepository.findByCursoLectivoIdOrderByOrdenAsc(2L)).thenReturn(List.of(h));
+        when(hitoRepository.findByCursoLectivoIdOrderByOrdenAscIdAsc(2L)).thenReturn(List.of(h));
         var res = service.internos(2L, "SPRINT");
         assertThat(res).hasSize(1);
     }
