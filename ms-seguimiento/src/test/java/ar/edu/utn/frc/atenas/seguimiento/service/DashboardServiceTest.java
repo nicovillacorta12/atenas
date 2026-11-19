@@ -72,12 +72,14 @@ class DashboardServiceTest {
     private ActividadIntegranteRepository actividades;
 
     private DashboardService servicio;
+    private ActividadProperties propiedadesActividad;
 
     @BeforeEach
     void preparar() {
+        propiedadesActividad = new ActividadProperties();
         servicio = new DashboardService(catedraClient, documentacionClient, acceso, usuarioActual,
                 eventos, asistencias, repositorios, snapshots, actividades,
-                new CalculadorActividad(new ActividadProperties()));
+                new CalculadorActividad(), propiedadesActividad);
     }
 
     private EquipoDto equipo() {
@@ -211,6 +213,28 @@ class DashboardServiceTest {
             assertThat(snapshot.integrantes())
                     .extracting(ResultadosDashboard.ContribucionEquipo::bajaContribucion)
                     .containsExactly(false, true);
+        });
+    }
+
+    @Test
+    @DisplayName("RN-27: el umbral configurable se aplica al recalcular las marcas al consultar")
+    void deberiaUsarElUmbralConfigurado_cuandoSeArmaElDashboard() {
+        prepararDatosPropios();
+        propiedadesActividad.setUmbralBajaContribucion(1.0);
+        SnapshotActividad actualizado = snapshot(EstadoSnapshot.ACTUALIZADO, 12, 0);
+        when(snapshots.findHistorialPorEquipo(EQUIPO_ID)).thenReturn(List.of(actualizado));
+        when(actividades.findPorSnapshots(List.of(20L))).thenReturn(List.of(
+                fila(actualizado, "sub-a", "UsuarioA", 5),
+                fila(actualizado, "sub-b", "UsuarioB", 4),
+                fila(actualizado, "sub-c", "UsuarioC", 3)));
+        when(documentacionClient.listarEntregas(CURSO_ID, List.of(EQUIPO_ID))).thenReturn(List.of());
+
+        DetalleEquipo respuesta = servicio.dashboardDeEquipo(EQUIPO_ID);
+
+        assertThat(respuesta.actividad().snapshots()).singleElement().satisfies(snapshot -> {
+            assertThat(snapshot.integrantes())
+                    .extracting(ResultadosDashboard.ContribucionEquipo::bajaContribucion)
+                    .containsExactly(false, false, true);
         });
     }
 

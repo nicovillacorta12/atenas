@@ -1,6 +1,7 @@
 package ar.edu.utn.frc.atenas.seguimiento.service;
 
 import ar.edu.utn.frc.atenas.commons.error.AccesoDenegadoException;
+import ar.edu.utn.frc.atenas.commons.error.NoEncontradoException;
 import ar.edu.utn.frc.atenas.commons.error.NoProcesableException;
 import ar.edu.utn.frc.atenas.commons.seguridad.UsuarioActual;
 import ar.edu.utn.frc.atenas.seguimiento.client.CatedraClient;
@@ -9,6 +10,7 @@ import ar.edu.utn.frc.atenas.seguimiento.client.RepositorioGitHub;
 import ar.edu.utn.frc.atenas.seguimiento.client.UbicacionRepositorio;
 import ar.edu.utn.frc.atenas.seguimiento.dto.externo.EquipoDto;
 import ar.edu.utn.frc.atenas.seguimiento.entity.RepositorioVinculado;
+import ar.edu.utn.frc.atenas.seguimiento.exception.RepositorioNoAccesibleException;
 import ar.edu.utn.frc.atenas.seguimiento.repository.RepositorioVinculadoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,7 +59,16 @@ public class RepositorioVinculadoService {
 
         String ramaElegida = rama.trim();
         UbicacionRepositorio ubicacion = gitHubClient.parsearUrl(url);
-        RepositorioGitHub repositorio = gitHubClient.repositorioPublico(ubicacion.propietario(), ubicacion.nombre());
+        RepositorioGitHub repositorio;
+        try {
+            repositorio = gitHubClient.repositorioPublico(ubicacion.propietario(), ubicacion.nombre());
+        } catch (NoEncontradoException noExiste) {
+            // El adapter informa el 404 de GitHub; para S07 tanto un repo inexistente como uno
+            // privado son el mismo rechazo de dominio (422, RN25).
+            throw new RepositorioNoAccesibleException(
+                    "El repositorio " + ubicacion.propietario() + "/" + ubicacion.nombre()
+                            + " no existe o no es público");
+        }
         if (!gitHubClient.existeRama(repositorio.propietario(), repositorio.nombre(), ramaElegida)) {
             throw new NoProcesableException(
                     "La rama " + ramaElegida + " no existe en el repositorio "

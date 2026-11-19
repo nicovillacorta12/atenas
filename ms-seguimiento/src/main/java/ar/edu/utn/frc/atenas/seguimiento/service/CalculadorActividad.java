@@ -1,8 +1,6 @@
 package ar.edu.utn.frc.atenas.seguimiento.service;
 
 import ar.edu.utn.frc.atenas.seguimiento.client.CommitGitHub;
-import ar.edu.utn.frc.atenas.seguimiento.config.ActividadProperties;
-import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -34,14 +32,7 @@ import java.util.Set;
  *   <li>Hay una fila por integrante aunque tenga 0 commits.</li>
  * </ol>
  */
-@Component
-public class CalculadorActividad {
-
-    private final ActividadProperties propiedades;
-
-    public CalculadorActividad(ActividadProperties propiedades) {
-        this.propiedades = propiedades;
-    }
+public final class CalculadorActividad {
 
     /** Integrante del equipo tal como lo informa ms-catedra (solo lo que necesita el cálculo). */
     public record IntegranteEquipo(String sub, String usuarioGithub) {
@@ -119,11 +110,15 @@ public class CalculadorActividad {
      * Calcula las marcas "sin actividad" y "baja contribución" (RN27), solo informativas.
      *
      * <p>Baja contribución: el integrante tiene menos commits que {@code umbral × promedio},
-     * donde el promedio es (commits atribuidos) / (cantidad de integrantes) y el umbral es
-     * configurable (por defecto 1/2). Si no hay commits atribuidos el promedio es 0 y nadie
-     * queda marcado: no tiene sentido decir que todos aportan poco respecto de nada.</p>
+     * donde el promedio es (commits atribuidos) / (cantidad de integrantes). El umbral lo pasa
+     * quien consulta, leyéndolo de la configuración: así esta clase sigue siendo pura. Si no hay
+     * commits atribuidos el promedio es 0 y nadie queda marcado: no tiene sentido decir que todos
+     * aportan poco respecto de nada.</p>
+     *
+     * @param umbralBajaContribucion fracción del promedio por debajo de la cual se marca la baja contribución
      */
-    public Marcas calcularMarcas(int commitsTotales, List<CommitsDeIntegrante> porIntegrante) {
+    public Marcas calcularMarcas(int commitsTotales, List<CommitsDeIntegrante> porIntegrante,
+                                 double umbralBajaContribucion) {
         boolean sinActividad = commitsTotales == 0;
         if (porIntegrante.isEmpty()) {
             return new Marcas(sinActividad, Set.of());
@@ -131,7 +126,7 @@ public class CalculadorActividad {
 
         long atribuidos = porIntegrante.stream().mapToLong(CommitsDeIntegrante::commits).sum();
         double promedio = (double) atribuidos / porIntegrante.size();
-        double minimoEsperado = propiedades.getUmbralBajaContribucion() * promedio;
+        double minimoEsperado = umbralBajaContribucion * promedio;
 
         Set<String> bajaContribucion = new LinkedHashSet<>();
         for (CommitsDeIntegrante integrante : porIntegrante) {

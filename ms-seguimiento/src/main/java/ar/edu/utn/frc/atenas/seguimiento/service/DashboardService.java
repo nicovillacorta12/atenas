@@ -7,6 +7,7 @@ import ar.edu.utn.frc.atenas.commons.seguridad.Roles;
 import ar.edu.utn.frc.atenas.commons.seguridad.UsuarioActual;
 import ar.edu.utn.frc.atenas.seguimiento.client.CatedraClient;
 import ar.edu.utn.frc.atenas.seguimiento.client.DocumentacionClient;
+import ar.edu.utn.frc.atenas.seguimiento.config.ActividadProperties;
 import ar.edu.utn.frc.atenas.seguimiento.dto.externo.EntregaEquipoDto;
 import ar.edu.utn.frc.atenas.seguimiento.dto.externo.EquipoDto;
 import ar.edu.utn.frc.atenas.seguimiento.entity.ActividadIntegrante;
@@ -68,6 +69,7 @@ public class DashboardService {
     private final SnapshotActividadRepository snapshots;
     private final ActividadIntegranteRepository actividades;
     private final CalculadorActividad calculador;
+    private final ActividadProperties propiedadesActividad;
 
     /** S10: dashboard de un equipo para el jefe o un docente de su comisión. */
     public DetalleEquipo dashboardDeEquipo(Long equipoId) {
@@ -203,7 +205,8 @@ public class DashboardService {
         Integer totales = snapshot.getCommitsTotales();
         Marcas marcas = totales == null
                 ? new Marcas(false, Set.of())
-                : calculador.calcularMarcas(totales, contribuciones);
+                : calculador.calcularMarcas(totales, contribuciones,
+                        propiedadesActividad.getUmbralBajaContribucion());
 
         List<ContribucionEquipo> integrantes = contribuciones.stream()
                 .map(contribucion -> new ContribucionEquipo(

@@ -1,7 +1,6 @@
 package ar.edu.utn.frc.atenas.seguimiento.service;
 
 import ar.edu.utn.frc.atenas.seguimiento.client.CommitGitHub;
-import ar.edu.utn.frc.atenas.seguimiento.config.ActividadProperties;
 import ar.edu.utn.frc.atenas.seguimiento.service.CalculadorActividad.CommitsDeIntegrante;
 import ar.edu.utn.frc.atenas.seguimiento.service.CalculadorActividad.IntegranteEquipo;
 import ar.edu.utn.frc.atenas.seguimiento.service.CalculadorActividad.Marcas;
@@ -20,8 +19,9 @@ class CalculadorActividadTest {
     private static final Instant INICIO = Instant.parse("2026-11-02T03:00:00Z");
     private static final Instant LIMITE = Instant.parse("2026-11-09T02:59:59Z");
     private static final Instant DENTRO = Instant.parse("2026-11-05T12:00:00Z");
+    private static final double UMBRAL = 0.5;
 
-    private final CalculadorActividad calculador = new CalculadorActividad(new ActividadProperties());
+    private final CalculadorActividad calculador = new CalculadorActividad();
 
     private static final List<IntegranteEquipo> EQUIPO = List.of(
             new IntegranteEquipo("sub-a", "usuarioa"),
@@ -181,7 +181,7 @@ class CalculadorActividadTest {
     @Test
     @DisplayName("RN-27: sin commits en el sprint, el equipo se marca sin actividad y nadie con baja contribución")
     void deberiaMarcarSinActividad_cuandoNoHayCommits() {
-        Marcas marcas = calculador.calcularMarcas(0, filas(0, 0, 0));
+        Marcas marcas = calculador.calcularMarcas(0, filas(0, 0, 0), UMBRAL);
 
         assertThat(marcas.sinActividad()).isTrue();
         assertThat(marcas.subsConBajaContribucion()).isEmpty();
@@ -191,7 +191,7 @@ class CalculadorActividadTest {
     @DisplayName("RN-27: un integrante por debajo de 1/2 del promedio se marca con baja contribución")
     void deberiaMarcarBajaContribucion_cuandoEstaPorDebajoDelUmbral() {
         // Atribuidos 22 entre 3 integrantes: promedio 22/3 ≈ 7,33; mínimo esperado 11/3 ≈ 3,67.
-        Marcas marcas = calculador.calcularMarcas(22, filas(10, 10, 2));
+        Marcas marcas = calculador.calcularMarcas(22, filas(10, 10, 2), UMBRAL);
 
         assertThat(marcas.sinActividad()).isFalse();
         assertThat(marcas.subsConBajaContribucion()).containsExactly("sub-2");
@@ -200,26 +200,27 @@ class CalculadorActividadTest {
     @Test
     @DisplayName("RN-27: un aporte parejo no marca a nadie")
     void deberiaNoMarcarNadie_cuandoElAporteEsParejo() {
-        assertThat(calculador.calcularMarcas(12, filas(4, 4, 4)).subsConBajaContribucion()).isEmpty();
+        assertThat(calculador.calcularMarcas(12, filas(4, 4, 4), UMBRAL).subsConBajaContribucion()).isEmpty();
     }
 
     @Test
     @DisplayName("RN-27: estar exactamente en el umbral no es baja contribución")
     void deberiaNoMarcar_cuandoEstaExactamenteEnElUmbral() {
         // Atribuidos 6 entre 3: promedio 2; mínimo esperado 1; el integrante con 1 no está por debajo.
-        assertThat(calculador.calcularMarcas(6, filas(4, 1, 1)).subsConBajaContribucion()).isEmpty();
+        assertThat(calculador.calcularMarcas(6, filas(4, 1, 1), UMBRAL).subsConBajaContribucion()).isEmpty();
     }
 
     @Test
     @DisplayName("RN-27: quien no aportó nada se marca cuando el resto sí aportó")
     void deberiaMarcarAlQueTieneCero_cuandoElRestoAporto() {
-        assertThat(calculador.calcularMarcas(8, filas(4, 4, 0)).subsConBajaContribucion()).containsExactly("sub-2");
+        assertThat(calculador.calcularMarcas(8, filas(4, 4, 0), UMBRAL).subsConBajaContribucion())
+                .containsExactly("sub-2");
     }
 
     @Test
     @DisplayName("RN-27: si todos los commits quedaron sin atribuir, hay actividad pero nadie queda marcado")
     void deberiaNoMarcarNadie_cuandoTodoQuedoSinAtribuir() {
-        Marcas marcas = calculador.calcularMarcas(5, filas(0, 0));
+        Marcas marcas = calculador.calcularMarcas(5, filas(0, 0), UMBRAL);
 
         assertThat(marcas.sinActividad()).isFalse();
         assertThat(marcas.subsConBajaContribucion()).isEmpty();
@@ -228,20 +229,24 @@ class CalculadorActividadTest {
     @Test
     @DisplayName("RN-27: el umbral es configurable")
     void deberiaUsarElUmbralConfigurado() {
-        ActividadProperties propiedades = new ActividadProperties();
-        propiedades.setUmbralBajaContribucion(1.0);
-        CalculadorActividad estricto = new CalculadorActividad(propiedades);
-
         // Promedio 4; con umbral 1 el mínimo esperado es 4: quien tiene 3 queda marcado.
-        assertThat(estricto.calcularMarcas(12, filas(5, 4, 3)).subsConBajaContribucion()).containsExactly("sub-2");
+        assertThat(calculador.calcularMarcas(12, filas(5, 4, 3), 1.0).subsConBajaContribucion())
+                .containsExactly("sub-2");
     }
 
     @Test
     @DisplayName("Un equipo sin integrantes no produce marcas de baja contribución")
     void deberiaNoFallar_cuandoNoHayIntegrantes() {
-        Marcas marcas = calculador.calcularMarcas(0, List.of());
+        Marcas marcas = calculador.calcularMarcas(0, List.of(), UMBRAL);
 
         assertThat(marcas.sinActividad()).isTrue();
         assertThat(marcas.subsConBajaContribucion()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("RN-27: el cálculo es puro: no tiene anotaciones de Spring ni estado inyectado")
+    void deberiaSerPuro_cuandoSeUsaSinSpring() {
+        assertThat(CalculadorActividad.class.getAnnotations()).isEmpty();
+        assertThat(CalculadorActividad.class.getDeclaredFields()).isEmpty();
     }
 }

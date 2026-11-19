@@ -31,8 +31,9 @@ public interface GitHubClient {
     /**
      * Devuelve los datos básicos de un repositorio público.
      *
+     * @throws ar.edu.utn.frc.atenas.commons.error.NoEncontradoException si GitHub responde 404
      * @throws ar.edu.utn.frc.atenas.seguimiento.exception.RepositorioNoAccesibleException
-     *         si no existe o es privado (RN25)
+     *         si el repositorio existe pero es privado (RN25)
      */
     RepositorioGitHub repositorioPublico(String propietario, String nombre);
 

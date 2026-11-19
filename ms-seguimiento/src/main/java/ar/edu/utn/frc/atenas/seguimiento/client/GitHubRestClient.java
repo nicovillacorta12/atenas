@@ -115,8 +115,8 @@ public class GitHubRestClient implements GitHubClient {
         GitHubRepositorioDto dto = obtener(
                 uri -> uri.path("/repos/{propietario}/{nombre}").build(propietario, nombre),
                 GitHubRepositorioDto.class)
-                .orElseThrow(() -> new RepositorioNoAccesibleException(
-                        "El repositorio " + referencia + " no existe o no es público"));
+                .orElseThrow(() -> new NoEncontradoException(
+                        "El repositorio " + referencia + " no existe en GitHub"));
 
         if (dto.esPrivado() == null || esVacio(dto.name())
                 || dto.owner() == null || esVacio(dto.owner().login())) {

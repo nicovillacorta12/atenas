@@ -244,6 +244,22 @@ class RepositorioVinculadoServiceTest {
     }
 
     @Test
+    @DisplayName("RN-25: el 404 de GitHub se convierte en el rechazo 422 de S07 y no se guarda")
+    void deberiaRechazarComoNoAccesible_cuandoGitHubNoEncuentraElRepositorio() {
+        usuarioRepresentanteDelEquipo();
+        when(gitHubClient.parsearUrl(URL)).thenReturn(new UbicacionRepositorio("usuario", "repo"));
+        when(gitHubClient.repositorioPublico("usuario", "repo"))
+                .thenThrow(new NoEncontradoException("El repositorio no existe en GitHub"));
+
+        RepositorioNoAccesibleException excepcion = assertThrows(RepositorioNoAccesibleException.class,
+                () -> servicio.vincular(EQUIPO_ID, URL, "main"));
+
+        assertThat(excepcion.getRegla()).isEqualTo("RN-25");
+        verify(gitHubClient, never()).existeRama(anyString(), anyString(), anyString());
+        verifyNoInteractions(repositorios);
+    }
+
+    @Test
     @DisplayName("RN-25: una rama inexistente se rechaza con 422 y no se guarda")
     void deberiaLanzarNoProcesable_cuandoLaRamaNoExiste() {
         usuarioRepresentanteDelEquipo();

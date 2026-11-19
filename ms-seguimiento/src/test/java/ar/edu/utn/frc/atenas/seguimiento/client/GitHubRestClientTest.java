@@ -274,11 +274,11 @@ class GitHubRestClientTest {
     }
 
     @Test
-    @DisplayName("RN-25: un repositorio inexistente (404) se rechaza como no accesible")
-    void deberiaRechazar_cuandoElRepositorioNoExiste() {
+    @DisplayName("RN-25: un 404 al buscar el repositorio se traduce a NoEncontradoException")
+    void deberiaLanzarNoEncontrado_cuandoElRepositorioNoExiste() {
         servidor.expect(once(), method(HttpMethod.GET)).andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-        assertThrows(RepositorioNoAccesibleException.class, () -> cliente.repositorioPublico("usuario", "repo"));
+        assertThrows(NoEncontradoException.class, () -> cliente.repositorioPublico("usuario", "repo"));
     }
 
     @Test
