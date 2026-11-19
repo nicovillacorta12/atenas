@@ -39,6 +39,18 @@ public class SecurityConfig {
                         // S07: el Gateway ya filtra por rol; se vuelve a validar acá (defensa en profundidad).
                         .requestMatchers(HttpMethod.PUT, "/api/seguimiento/equipos/*/repositorio")
                         .hasRole(Roles.ALUMNO)
+                        // S01 a S06: calendario y asistencia (mismas reglas de rol que el Gateway).
+                        .requestMatchers(HttpMethod.POST, "/api/seguimiento/comisiones-lectivas/*/eventos")
+                        .hasRole(Roles.DOCENTE)
+                        .requestMatchers(HttpMethod.GET, "/api/seguimiento/comisiones-lectivas/*/eventos")
+                        .hasAnyRole(Roles.JEFE_CATEDRA, Roles.DOCENTE, Roles.ALUMNO)
+                        .requestMatchers(HttpMethod.PUT, "/api/seguimiento/eventos/*/asistencias/*",
+                                "/api/seguimiento/eventos/*/equipos/*/asistencias")
+                        .hasRole(Roles.DOCENTE)
+                        .requestMatchers(HttpMethod.GET, "/api/seguimiento/eventos/*/asistencias")
+                        .hasAnyRole(Roles.JEFE_CATEDRA, Roles.DOCENTE)
+                        .requestMatchers(HttpMethod.GET, "/api/seguimiento/mi-asistencia")
+                        .hasRole(Roles.ALUMNO)
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(recurso -> recurso
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(conversorJwtKeycloak)));
