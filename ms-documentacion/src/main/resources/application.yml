@@ -38,3 +38,6 @@ atenas:
   http:
     timeout-conexion: 2s
     timeout-lectura: 5s
+  drive:
+    url-base: https://www.googleapis.com/drive/v3
+    api-key: ${DRIVE_API_KEY:}

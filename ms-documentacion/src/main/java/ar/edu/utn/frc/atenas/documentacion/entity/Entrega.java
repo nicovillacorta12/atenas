@@ -46,6 +46,9 @@ public class Entrega {
 
     private Integer nota;
 
+    @Column(name = "modificado_post_entrega")
+    private Boolean modificadoPostEntrega;
+
     public Entrega() {
     }
 
@@ -105,5 +108,13 @@ public class Entrega {
 
     public void setNota(Integer nota) {
         this.nota = nota;
+    }
+
+    public Boolean getModificadoPostEntrega() {
+        return modificadoPostEntrega;
+    }
+
+    public void setModificadoPostEntrega(Boolean modificadoPostEntrega) {
+        this.modificadoPostEntrega = modificadoPostEntrega;
     }
 }
