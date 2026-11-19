@@ -70,6 +70,7 @@ public class CursoLectivoService {
     public CursoLectivoInternoResponse obtenerInterno(Long id) {
         CursoLectivo curso = cursoLectivoRepository.findById(id)
                 .orElseThrow(() -> new NoEncontradoException("No existe el curso lectivo " + id));
+        log.info("I05: curso lectivo consultado id={}", id);
         return CursoLectivoMapper.aInternoResponse(curso);
     }
 
