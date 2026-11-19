@@ -11,3 +11,8 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: http://localhost:8081/realms/atenas/protocol/openid-connect/certs
+
+atenas:
+  clientes:
+    catedra:
+      url: http://localhost:8082
