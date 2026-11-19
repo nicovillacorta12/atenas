@@ -14,6 +14,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -135,6 +136,39 @@ class SnapshotActividadRepositoryTest {
                 .extracting(ActividadIntegrante::getEstudianteSub, ActividadIntegrante::getCommits)
                 .containsExactlyInAnyOrder(
                         org.assertj.core.groups.Tuple.tuple("sub-a", 2),
+                        org.assertj.core.groups.Tuple.tuple("sub-b", 0));
+    }
+
+    @Test
+    @DisplayName("F13: el historial del dashboard se ordena por sprint y, dentro de cada uno, por fecha descendente")
+    void deberiaListarElHistorialDeUnEquipo_ordenadoPorSprintYFecha() {
+        SnapshotActividad viejo = snapshot(repositorio, 7L, T1, EstadoSnapshot.ACTUALIZADO);
+        SnapshotActividad reciente = snapshot(repositorio, 7L, T2, EstadoSnapshot.DESACTUALIZADO);
+        SnapshotActividad otroSprint = snapshot(repositorio, 8L, T1, EstadoSnapshot.NO_DISPONIBLE);
+        RepositorioVinculado otroEquipo = repositorios.saveAndFlush(nuevoRepositorio(11L));
+        snapshot(otroEquipo, 9L, T1, EstadoSnapshot.ACTUALIZADO);
+
+        List<SnapshotActividad> historial = snapshots.findHistorialPorEquipo(10L);
+
+        assertThat(historial).extracting(SnapshotActividad::getId)
+                .containsExactly(reciente.getId(), viejo.getId(), otroSprint.getId());
+    }
+
+    @Test
+    @DisplayName("F13: las filas de actividad de varios snapshots se traen en una sola consulta")
+    void deberiaListarLasFilas_deVariosSnapshots() {
+        SnapshotActividad primero = snapshot(repositorio, 7L, T1, EstadoSnapshot.ACTUALIZADO);
+        SnapshotActividad segundo = snapshot(repositorio, 8L, T1, EstadoSnapshot.ACTUALIZADO);
+        actividades.saveAndFlush(fila(primero, "sub-a", 4));
+        actividades.saveAndFlush(fila(segundo, "sub-b", 0));
+
+        List<ActividadIntegrante> encontradas =
+                actividades.findPorSnapshots(List.of(primero.getId(), segundo.getId()));
+
+        assertThat(encontradas)
+                .extracting(ActividadIntegrante::getEstudianteSub, ActividadIntegrante::getCommits)
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple("sub-a", 4),
                         org.assertj.core.groups.Tuple.tuple("sub-b", 0));
     }
 

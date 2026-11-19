@@ -123,4 +123,21 @@ class AsistenciaRepositoryTest {
         assertThat(propia).extracting(a -> a.getEvento().getFecha()).containsExactly(T2, T1);
         assertThat(propia).extracting(Asistencia::getEstudianteSub).containsOnly("sub-a");
     }
+
+    @Test
+    @DisplayName("F13: el dashboard solo toma asistencia del equipo y de los eventos de su comisión")
+    void deberiaListarLaAsistenciaDelEquipoEnSuComision() {
+        Evento otraComision = eventos.saveAndFlush(evento(99L, T1));
+        fila(eventoViejo, "sub-a", true);
+        fila(eventoNuevo, "sub-b", false);
+        asistencias.saveAndFlush(Asistencia.builder().evento(eventoViejo).estudianteSub("sub-c")
+                .equipoId(8L).presente(true).registradaPorSub("sub-doc").fechaRegistro(T1).build());
+        asistencias.saveAndFlush(Asistencia.builder().evento(otraComision).estudianteSub("sub-d")
+                .equipoId(7L).presente(true).registradaPorSub("sub-doc").fechaRegistro(T1).build());
+
+        List<Asistencia> encontradas = asistencias.findDelEquipoEnComision(7L, 10L);
+
+        assertThat(encontradas).extracting(Asistencia::getEstudianteSub).containsExactly("sub-b", "sub-a");
+        assertThat(encontradas.get(0).getEvento().getId()).isEqualTo(eventoNuevo.getId());
+    }
 }

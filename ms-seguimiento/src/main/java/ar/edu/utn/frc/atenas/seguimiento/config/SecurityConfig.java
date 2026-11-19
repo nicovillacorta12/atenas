@@ -54,6 +54,10 @@ public class SecurityConfig {
                         // S08: el servicio además valida que el docente pertenezca a la comisión (I04).
                         .requestMatchers(HttpMethod.POST, "/api/seguimiento/equipos/*/actividad/actualizacion")
                         .hasAnyRole(Roles.JEFE_CATEDRA, Roles.DOCENTE)
+                        // S09 y S10: el servicio valida la comisión y reserva el filtro por curso al jefe.
+                        .requestMatchers(HttpMethod.GET, "/api/seguimiento/dashboard/equipos",
+                                "/api/seguimiento/dashboard/equipos/*")
+                        .hasAnyRole(Roles.JEFE_CATEDRA, Roles.DOCENTE)
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(recurso -> recurso
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(conversorJwtKeycloak)));

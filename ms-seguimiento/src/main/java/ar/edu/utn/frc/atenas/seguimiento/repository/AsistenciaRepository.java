@@ -21,4 +21,14 @@ public interface AsistenciaRepository extends JpaRepository<Asistencia, Long> {
     /** Asistencia de un alumno con los datos de cada evento, del más reciente al más antiguo. */
     @Query("select a from Asistencia a join fetch a.evento e where a.estudianteSub = :sub order by e.fecha desc")
     List<Asistencia> findDeEstudiante(@Param("sub") String sub);
+
+    /**
+     * Asistencia registrada por un equipo en los eventos de su comisión. El {@code join fetch}
+     * evita recorrer cada evento por separado al armar el dashboard (S10).
+     */
+    @Query("select a from Asistencia a join fetch a.evento e "
+            + "where a.equipoId = :equipoId and e.comisionLectivaId = :comisionLectivaId "
+            + "order by e.fecha desc, a.estudianteSub asc")
+    List<Asistencia> findDelEquipoEnComision(@Param("equipoId") Long equipoId,
+                                             @Param("comisionLectivaId") Long comisionLectivaId);
 }
