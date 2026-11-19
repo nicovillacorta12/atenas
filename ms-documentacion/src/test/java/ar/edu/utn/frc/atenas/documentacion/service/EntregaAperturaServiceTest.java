@@ -63,7 +63,7 @@ class EntregaAperturaServiceTest {
                 catedraClient,
                 entregaRepository,
                 archivoVerificadoRepository,
-                driveClient,
+                new CalculadorCambioPostEntrega(driveClient),
                 usuarioActual,
                 new ZonaHoraria("America/Argentina/Cordoba"));
         hito = new Hito(3L, 2L, "Sprint 1", TipoHito.SPRINT, 1,
