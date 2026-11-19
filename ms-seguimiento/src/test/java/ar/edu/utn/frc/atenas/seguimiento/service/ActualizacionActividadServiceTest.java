@@ -176,6 +176,52 @@ class ActualizacionActividadServiceTest {
     }
 
     @Test
+    @DisplayName("RN-01: con I01 caído un docente no degrada snapshots sin verificar su comisión")
+    void deberiaPropagarFallaDeCatedra_cuandoUnDocenteNoPuedeVerificarLaComision() {
+        when(repositorios.findByEquipoId(EQUIPO_ID)).thenReturn(Optional.of(repositorio));
+        when(catedraClient.obtenerEquipo(EQUIPO_ID))
+                .thenThrow(new ServicioNoDisponibleException("ms-catedra no respondió"));
+        when(accesoComision.esJefe()).thenReturn(false);
+
+        assertThrows(ServicioNoDisponibleException.class, () -> servicio.actualizarEquipo(EQUIPO_ID, AHORA));
+
+        verify(accesoComision, never()).exigirJefeODocente(any());
+        verify(snapshots, never()).registrarFallaDeServicio(any(), any(), any());
+        verifyNoInteractions(documentacionClient, gitHubClient);
+    }
+
+    @Test
+    @DisplayName("RN-28: con I01 caído el jefe sí degrada los snapshots conocidos")
+    void deberiaDegradarSprintsConocidos_cuandoCatedraNoRespondeYEsJefe() {
+        when(repositorios.findByEquipoId(EQUIPO_ID)).thenReturn(Optional.of(repositorio));
+        when(catedraClient.obtenerEquipo(EQUIPO_ID))
+                .thenThrow(new ServicioNoDisponibleException("ms-catedra no respondió"));
+        when(accesoComision.esJefe()).thenReturn(true);
+        SnapshotActividad desactualizado = snapshot(EstadoSnapshot.DESACTUALIZADO, 9, 1);
+        when(snapshots.registrarFallaDeServicio(repositorio, MotivoFalla.NO_RESPONDE, AHORA))
+                .thenReturn(List.of(desactualizado));
+
+        ResultadoActualizacion respuesta = servicio.actualizarEquipo(EQUIPO_ID, AHORA);
+
+        assertThat(respuesta.detalles()).singleElement()
+                .extracting(DetalleSprint::snapshot).isSameAs(desactualizado);
+        verify(accesoComision, never()).exigirJefeODocente(any());
+        verifyNoInteractions(documentacionClient, gitHubClient);
+    }
+
+    @Test
+    @DisplayName("S08: un 404 de I01 se propaga sin degradar snapshots")
+    void deberiaPropagar404_cuandoCatedraNoEncuentraElEquipo() {
+        when(repositorios.findByEquipoId(EQUIPO_ID)).thenReturn(Optional.of(repositorio));
+        when(catedraClient.obtenerEquipo(EQUIPO_ID)).thenThrow(new NoEncontradoException("No existe el equipo"));
+
+        assertThrows(NoEncontradoException.class, () -> servicio.actualizarEquipo(EQUIPO_ID, AHORA));
+
+        verify(snapshots, never()).registrarFallaDeServicio(any(), any(), any());
+        verifyNoInteractions(documentacionClient, gitHubClient);
+    }
+
+    @Test
     @DisplayName("RN-28: una respuesta inesperada de GitHub deja el snapshot NO_DISPONIBLE")
     void deberiaCrearNoDisponible_cuandoLaRespuestaEsInesperada() {
         prepararEquipoYSprint();

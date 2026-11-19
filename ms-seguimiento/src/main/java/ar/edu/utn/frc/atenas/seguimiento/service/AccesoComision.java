@@ -35,9 +35,18 @@ public class AccesoComision {
         }
     }
 
+    /**
+     * Informa si el solicitante es jefe. Se expone para los casos en que falta la comisión
+     * y hay que decidir si se puede degradar sin haber comprobado RN01: el jefe accede a
+     * cualquier comisión, un docente no.
+     */
+    public boolean esJefe() {
+        return usuarioActual.tieneRol(Roles.JEFE_CATEDRA);
+    }
+
     /** El jefe accede a cualquier comisión; el docente, solo a las suyas. */
     public void exigirJefeODocente(Long comisionLectivaId) {
-        if (usuarioActual.tieneRol(Roles.JEFE_CATEDRA)) {
+        if (esJefe()) {
             return;
         }
         exigirDocenteAsignado(comisionLectivaId, "RN-01");
@@ -45,7 +54,7 @@ public class AccesoComision {
 
     /** El jefe accede a todo; el docente, a sus comisiones; el alumno, a la suya (I03). */
     public void exigirJefeDocenteOAlumno(Long comisionLectivaId) {
-        if (usuarioActual.tieneRol(Roles.JEFE_CATEDRA)) {
+        if (esJefe()) {
             return;
         }
         if (usuarioActual.tieneRol(Roles.DOCENTE)) {

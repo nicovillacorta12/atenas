@@ -87,6 +87,14 @@ class AccesoComisionTest {
     // ---------------------------------------------------------------- exigirJefeODocente
 
     @Test
+    @DisplayName("RN-01: esJefe refleja el rol del token para decidir si se puede degradar")
+    void deberiaInformarSiElSolicitanteEsJefe() {
+        when(usuarioActual.tieneRol(Roles.JEFE_CATEDRA)).thenReturn(true);
+
+        assertThat(acceso.esJefe()).isTrue();
+    }
+
+    @Test
     @DisplayName("RN-01: el jefe accede a cualquier comisión sin consultar a ms-catedra")
     void deberiaPermitirAlJefe_sinConsultarACatedra() {
         when(usuarioActual.tieneRol(Roles.JEFE_CATEDRA)).thenReturn(true);

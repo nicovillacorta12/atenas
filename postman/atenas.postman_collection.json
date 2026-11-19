@@ -2403,6 +2403,11 @@
                 "exec": [
                   "pm.test('S03 responde 200', function () {",
                   "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S03 registra la asistencia del representante', function () {",
+                  "    const cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo.estudianteSub).to.eql(pm.environment.get('estudianteSub'));",
+                  "    pm.expect(cuerpo.presente).to.eql(true);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -2528,6 +2533,90 @@
           "response": []
         },
         {
+          "name": "S03 Repetir asistencia individual",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const token = pm.environment.get('token-representante') || '';",
+                  "if (token) {",
+                  "    const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');",
+                  "    pm.environment.set('estudianteSub', JSON.parse(atob(payload)).sub);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('S03 repetida responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S03 repetida actualiza el presente a false', function () {",
+                  "    const cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo.estudianteSub).to.eql(pm.environment.get('estudianteSub'));",
+                  "    pm.expect(cuerpo.presente).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"presente\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/seguimiento/eventos/{{eventoId}}/asistencias/{{estudianteSub}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "seguimiento",
+                "eventos",
+                "{{eventoId}}",
+                "asistencias",
+                "{{estudianteSub}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token-docente-a}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Repetir S03: el registro existente se actualiza en vez de duplicarse (RN12)."
+          },
+          "response": []
+        },
+        {
           "name": "S05 Consultar asistencia del evento",
           "event": [
             {
@@ -2536,6 +2625,11 @@
                 "exec": [
                   "pm.test('S05 responde 200', function () {",
                   "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S05 conserva una sola fila con el último valor', function () {",
+                  "    const filas = pm.response.json().filter(fila => fila.estudianteSub === pm.environment.get('estudianteSub'));",
+                  "    pm.expect(filas).to.have.lengthOf(1);",
+                  "    pm.expect(filas[0].presente).to.eql(false);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -2589,7 +2683,12 @@
                   "    pm.response.to.have.status(200);",
                   "});",
                   "pm.test('S07 devuelve el repositorio vinculado', function () {",
-                  "    pm.expect(pm.response.json().equipoId).to.eql(Number(pm.environment.get('equipo1Id')));",
+                  "    const cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo.equipoId).to.eql(Number(pm.environment.get('equipo1Id')));",
+                  "    pm.expect(cuerpo.propietario).to.eql(pm.environment.get('githubUsuario'));",
+                  "    pm.expect(cuerpo.nombre).to.eql(pm.environment.get('githubRepositorio'));",
+                  "    pm.expect(cuerpo.rama).to.eql(pm.environment.get('githubRama'));",
+                  "    pm.expect(cuerpo.url).to.eql('https://github.com/' + pm.environment.get('githubUsuario') + '/' + pm.environment.get('githubRepositorio'));",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -3069,6 +3168,16 @@
                 "exec": [
                   "pm.test('S08 responde 200', function () {",
                   "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S08 devuelve un snapshot actualizado por sprint', function () {",
+                  "    const cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo.equipoId).to.eql(Number(pm.environment.get('equipo1Id')));",
+                  "    pm.expect(cuerpo.snapshots).to.be.an('array').that.is.not.empty;",
+                  "    cuerpo.snapshots.forEach(snapshot => {",
+                  "        pm.expect(snapshot.estado).to.eql('ACTUALIZADO');",
+                  "        pm.expect(snapshot.commitsTotales).to.be.a('number');",
+                  "        pm.expect(snapshot.commitsSinAtribuir).to.be.a('number');",
+                  "    });",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -3121,6 +3230,15 @@
                 "exec": [
                   "pm.test('S09 responde 200', function () {",
                   "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S09 compone equipos con entregas disponibles', function () {",
+                  "    const cuerpos = pm.response.json();",
+                  "    pm.expect(cuerpos).to.be.an('array').that.is.not.empty;",
+                  "    cuerpos.forEach(dashboard => pm.expect(dashboard.entregas.disponible).to.eql(true));",
+                  "    const equipo = cuerpos.find(dashboard => dashboard.equipoId === Number(pm.environment.get('equipo1Id')));",
+                  "    pm.expect(equipo, 'el equipo 1 debe estar en el dashboard').to.exist;",
+                  "    pm.expect(equipo.actividad.disponible).to.eql(true);",
+                  "    pm.expect(equipo.actividad.snapshots).to.be.an('array').that.is.not.empty;",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -3171,6 +3289,14 @@
                 "exec": [
                   "pm.test('S10 responde 200', function () {",
                   "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S10 compone asistencia, entregas y actividad del equipo', function () {",
+                  "    const cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo.equipoId).to.eql(Number(pm.environment.get('equipo1Id')));",
+                  "    pm.expect(cuerpo.entregas.disponible).to.eql(true);",
+                  "    pm.expect(cuerpo.entregas.hitos).to.be.an('array');",
+                  "    pm.expect(cuerpo.actividad.disponible).to.eql(true);",
+                  "    pm.expect(cuerpo.actividad.snapshots).to.be.an('array').that.is.not.empty;",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -3279,6 +3405,9 @@
                 "exec": [
                   "pm.test('S06 responde 200', function () {",
                   "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S06 devuelve una lista de asistencias propias', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -3316,6 +3445,61 @@
               ]
             },
             "description": "Consultar la asistencia del alumno autenticado."
+          },
+          "response": []
+        },
+        {
+          "name": "S06 Consultar mi asistencia del representante",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('S06 del representante responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S06 del representante refleja la última asistencia', function () {",
+                  "    const filas = pm.response.json().filter(fila => fila.eventoId === Number(pm.environment.get('eventoId')));",
+                  "    pm.expect(filas).to.have.lengthOf(1);",
+                  "    pm.expect(filas[0].presente).to.eql(false);",
+                  "    pm.expect(filas[0].comisionLectivaId).to.eql(Number(pm.environment.get('comisionLectivaId')));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/seguimiento/mi-asistencia",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "seguimiento",
+                "mi-asistencia"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token-representante}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Verifica que el representante ve su propia asistencia después de S03 repetida."
           },
           "response": []
         },
@@ -3873,8 +4057,73 @@
     },
     {
       "name": "07 Negativos",
-      "description": "Casos negativos de ms-catedra: cupos inválidos, doble pertenencia, aseguramiento sin condiciones y alumno de otra comisión.",
+      "description": "Casos negativos de ms-catedra y ms-seguimiento: cupos, pertenencia, RN01, RN25 y acceso al dashboard.",
       "item": [
+        {
+          "name": "C10 Asignar docente B a comisión 2 (preparación)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Preparación: docente B asignado a la comisión 2', function () {",
+                  "    pm.expect([201, 409]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docenteId\": {{docenteBId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/comisiones-lectivas/{{comisionLectiva2Id}}/docentes",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "comisiones-lectivas",
+                "{{comisionLectiva2Id}}",
+                "docentes"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token-jefe}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Preparación para RN01: docente B pertenece a la comisión 2, no a la del equipo 1."
+          },
+          "response": []
+        },
         {
           "name": "C16 Cupo inválido",
           "event": [
@@ -4664,14 +4913,19 @@
           "response": []
         },
         {
-          "name": "S07 Repositorio invalido",
+          "name": "S07 Rama inexistente",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('S07 repositorio invalido responde 422', function () {",
+                  "pm.test('S07 rama inexistente responde 422', function () {",
                   "    pm.response.to.have.status(422);",
+                  "});",
+                  "pm.test('S07 informa la regla RN-25', function () {",
+                  "    const cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo.regla).to.eql('RN-25');",
+                  "    pm.expect(cuerpo.detail).to.include('rama-inexistente');",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -4694,7 +4948,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"url\": \"https://github.com/usuario-inexistente/repositorio-inexistente\",\n  \"rama\": \"rama-inexistente\"\n}",
+              "raw": "{\n  \"url\": \"https://github.com/{{githubUsuario}}/{{githubRepositorio}}\",\n  \"rama\": \"rama-inexistente\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4724,7 +4978,112 @@
                 }
               ]
             },
-            "description": "Repositorio o rama inexistente; puede devolver 404 si el backend no implementa S07."
+            "description": "El repositorio existe y es público; la rama no. RN-25 devuelve 422."
+          },
+          "response": []
+        },
+        {
+          "name": "S08 Docente de otra comisión no puede actualizar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('S08 de otra comisión responde 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test('S08 de otra comisión informa RN-01', function () {",
+                  "    pm.expect(pm.response.json().regla).to.eql('RN-01');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/seguimiento/equipos/{{equipo1Id}}/actividad/actualizacion",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "seguimiento",
+                "equipos",
+                "{{equipo1Id}}",
+                "actividad",
+                "actualizacion"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token-docente-b}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "RN01: docente B pertenece a la comisión 2 y no puede actualizar el equipo 1."
+          },
+          "response": []
+        },
+        {
+          "name": "S09 Alumno no puede ver dashboard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Dashboard con token de alumno responde 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/seguimiento/dashboard/equipos?comisionLectivaId={{comisionLectivaId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "seguimiento",
+                "dashboard",
+                "equipos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token-alumno-b}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "El Gateway reserva S09/S10 para JEFE_CATEDRA y DOCENTE."
           },
           "response": []
         }
@@ -4794,8 +5153,14 @@
                   "pm.test('S08 con token invalido responde 200', function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test('S08 deja el snapshot desactualizado', function () {",
-                  "    pm.expect(pm.response.json().estado).to.eql('DESACTUALIZADO');",
+                  "pm.test('S08 deja los snapshots desactualizados conservando datos', function () {",
+                  "    const cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo.snapshots).to.be.an('array').that.is.not.empty;",
+                  "    cuerpo.snapshots.forEach(snapshot => {",
+                  "        pm.expect(snapshot.estado).to.eql('DESACTUALIZADO');",
+                  "        pm.expect(snapshot.commitsTotales).to.be.a('number');",
+                  "        pm.expect(snapshot.commitsSinAtribuir).to.be.a('number');",
+                  "    });",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -4840,6 +5205,63 @@
           "response": []
         },
         {
+          "name": "S10 Dashboard tras token de GitHub invalido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Dashboard tras token invalido responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Dashboard expone los snapshots desactualizados', function () {",
+                  "    const cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo.actividad.disponible).to.eql(true);",
+                  "    pm.expect(cuerpo.actividad.snapshots).to.be.an('array').that.is.not.empty;",
+                  "    cuerpo.actividad.snapshots.forEach(snapshot => pm.expect(snapshot.estado).to.eql('DESACTUALIZADO'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/seguimiento/dashboard/equipos/{{equipo1Id}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "seguimiento",
+                "dashboard",
+                "equipos",
+                "{{equipo1Id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token-docente-a}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "La actividad propia sigue disponible aunque GitHub falló y RN28 degradó el snapshot."
+          },
+          "response": []
+        },
+        {
           "name": "S09 Dashboard con documentacion pausada",
           "event": [
             {
@@ -4849,8 +5271,13 @@
                   "pm.test('S09 degradado responde 200', function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test('S09 marca entregas no disponibles', function () {",
-                  "    pm.expect(pm.response.json().entregas.disponible).to.eql(false);",
+                  "pm.test('S09 marca entregas no disponibles y sin hitos', function () {",
+                  "    const cuerpos = pm.response.json();",
+                  "    pm.expect(cuerpos).to.be.an('array').that.is.not.empty;",
+                  "    cuerpos.forEach(dashboard => {",
+                  "        pm.expect(dashboard.entregas.disponible).to.eql(false);",
+                  "        pm.expect(dashboard.entregas.hitos).to.be.empty;",
+                  "    });",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -4902,8 +5329,10 @@
                   "pm.test('S10 degradado responde 200', function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test('S10 marca entregas no disponibles', function () {",
-                  "    pm.expect(pm.response.json().entregas.disponible).to.eql(false);",
+                  "pm.test('S10 marca entregas no disponibles y sin hitos', function () {",
+                  "    const cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo.entregas.disponible).to.eql(false);",
+                  "    pm.expect(cuerpo.entregas.hitos).to.be.empty;",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -4979,6 +5408,119 @@
                 "api",
                 "documentacion",
                 "entregas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token-docente-a}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Preparación manual: docker compose pause ms-catedra antes de ejecutar."
+          },
+          "response": []
+        },
+        {
+          "name": "S08 Con I01 caida no degrada snapshots para docente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('S08 con I01 caída responde 503', function () {",
+                  "    pm.response.to.have.status(503);",
+                  "});",
+                  "pm.test('S08 con I01 caída devuelve ProblemDetail', function () {",
+                  "    const cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo.status).to.eql(503);",
+                  "    pm.expect(cuerpo.detail).to.be.a('string').and.not.be.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/seguimiento/equipos/{{equipo1Id}}/actividad/actualizacion",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "seguimiento",
+                "equipos",
+                "{{equipo1Id}}",
+                "actividad",
+                "actualizacion"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token-docente-a}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Preparación manual: docker compose pause ms-catedra. Un docente no puede degradar sin verificar RN01."
+          },
+          "response": []
+        },
+        {
+          "name": "S09 Dashboard con ms-catedra pausado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Dashboard con ms-catedra pausado responde 503', function () {",
+                  "    pm.response.to.have.status(503);",
+                  "});",
+                  "pm.test('Dashboard sin catedra devuelve ProblemDetail', function () {",
+                  "    const cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo.status).to.eql(503);",
+                  "    pm.expect(cuerpo.title).to.eql('Servicio no disponible');",
+                  "    pm.expect(cuerpo.correlationId).to.be.a('string').and.not.be.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/seguimiento/dashboard/equipos?comisionLectivaId={{comisionLectivaId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "seguimiento",
+                "dashboard",
+                "equipos"
               ]
             },
             "auth": {

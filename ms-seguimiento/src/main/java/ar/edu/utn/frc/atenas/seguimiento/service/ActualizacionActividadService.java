@@ -35,8 +35,9 @@ import java.util.Optional;
  * <p>Las llamadas externas ocurren antes de abrir cualquier transacción: este service no es
  * transaccional y {@link SnapshotService} abre la suya solo para persistir. Las fallas se
  * convierten en estados de snapshot (RN28) y nunca se lanzan hacia afuera, salvo la ausencia
- * de repositorio vinculado (404) y la negación de acceso de S08 (403). En la tarea nocturna
- * una falla por equipo se aísla para que no corte el barrido de los demás.</p>
+ * de repositorio vinculado (404), la negación de acceso de S08 (403) y la imposibilidad de
+ * verificar la comisión del solicitante (503). En la tarea nocturna una falla por equipo se
+ * aísla para que no corte el barrido de los demás.</p>
  */
 @Slf4j
 @Service
@@ -69,11 +70,23 @@ public class ActualizacionActividadService {
         try {
             equipo = catedraClient.obtenerEquipo(equipoId);
         } catch (ErrorDominioException falla) {
-            // Sin I01 no se puede comprobar la comisión, pero RN28 manda degradar y no bloquear.
+            /*
+             * S08 necesita la comisión antes de escribir. Un docente no puede degradar
+             * snapshots sin comprobar RN01: se propaga el 404/503 de I01 para no modificar
+             * evidencia de un equipo ajeno. El jefe accede a cualquier comisión, así que
+             * para él sí se aplica la degradación prevista en RN28.
+             */
+            if (falla instanceof NoEncontradoException || !accesoComision.esJefe()) {
+                throw falla;
+            }
             log.warn("No se pudo obtener el equipo {} para verificar el acceso; se degradan sus snapshots", equipoId);
             return fallaDeServicio(repositorio, ahora, motivoDe(falla));
         }
         if (equipo == null || equipo.comisionLectivaId() == null) {
+            if (!accesoComision.esJefe()) {
+                throw new ServicioNoDisponibleException(
+                        "ms-catedra devolvió un equipo incompleto", "RN-01");
+            }
             return fallaDeServicio(repositorio, ahora, MotivoFalla.RESPUESTA_INESPERADA);
         }
 
