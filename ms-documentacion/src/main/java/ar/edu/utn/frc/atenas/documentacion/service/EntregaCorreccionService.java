@@ -78,10 +78,15 @@ public class EntregaCorreccionService {
         entrega.setCorregidaPorSub(sub);
         entrega.setEstado(EstadoEntrega.CORREGIDA);
         entrega.setModificadoPostEntrega(modificadoPostEntrega);
-        Entrega guardada = entregaRepository.save(entrega);
+        entregaRepository.save(entrega);
 
-        CambioPostEntrega cambio = calculadorCambio.paraApertura(guardada, archivo);
-        return EntregaAperturaMapper.aResponse(guardada, archivo, cambio, zonaHoraria);
+        // Se mapea la entidad original porque su hito ya fue cargado por el
+        // EntityGraph del repositorio. La entidad que devuelve save puede ser
+        // otra instancia con el hito como proxy y, al no haber transacción
+        // abierta alrededor de las llamadas externas, ese proxy fallaría al
+        // leerse fuera de la sesión.
+        CambioPostEntrega cambio = calculadorCambio.paraApertura(entrega, archivo);
+        return EntregaAperturaMapper.aResponse(entrega, archivo, cambio, zonaHoraria);
     }
 
     private void validarNota(Integer nota) {

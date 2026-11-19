@@ -19,6 +19,7 @@ import ar.edu.utn.frc.atenas.documentacion.entity.Hito;
 import ar.edu.utn.frc.atenas.documentacion.entity.TipoHito;
 import ar.edu.utn.frc.atenas.documentacion.repository.ArchivoVerificadoRepository;
 import ar.edu.utn.frc.atenas.documentacion.repository.EntregaRepository;
+import org.hibernate.LazyInitializationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -98,6 +100,22 @@ class EntregaCorreccionServiceTest {
         assertThat(respuesta.nota()).isEqualTo(nota);
         assertThat(entrega.getFechaCorreccion()).isNotNull();
         assertThat(entrega.getCorregidaPorSub()).isEqualTo("sub-doc");
+    }
+
+    @Test
+    @DisplayName("D07: mapea la entrega original aunque save devuelva otra instancia con hito lazy")
+    void deberiaMapearLaEntregaOriginal_cuandoSaveDevuelveOtraInstancia() {
+        prepararCorreccionOk();
+        Hito hitoLazy = mock(Hito.class, invocacion -> {
+            throw new LazyInitializationException("hito fuera de sesión");
+        });
+        Entrega guardada = new Entrega(10L, hitoLazy, 7L, EstadoEntrega.CORREGIDA, false, 8);
+        when(entregaRepository.save(any(Entrega.class))).thenReturn(guardada);
+
+        EntregaAperturaResponse respuesta = service.corregir(10L, 8);
+
+        assertThat(respuesta.estado()).isEqualTo("CORREGIDA");
+        assertThat(respuesta.hito().nombre()).isEqualTo("Sprint 1");
     }
 
     @Test
