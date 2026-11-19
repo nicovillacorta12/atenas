@@ -85,7 +85,7 @@ public class HitoService {
         return lista.stream().map(this::aResponse).toList();
     }
 
-    private ar.edu.utn.frc.atenas.documentacion.dto.externo.CursoLectivoInterno obtenerCurso(Long id) {
+    private ar.edu.utn.frc.atenas.documentacion.dto.externo.CursoLectivoDto obtenerCurso(Long id) {
         try {
             return catedraClient.obtenerCurso(id);
         } catch (NoEncontradoException e) {

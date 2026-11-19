@@ -9,7 +9,7 @@ import ar.edu.utn.frc.atenas.commons.seguridad.UsuarioActual;
 import ar.edu.utn.frc.atenas.commons.tiempo.ZonaHoraria;
 import ar.edu.utn.frc.atenas.documentacion.client.CatedraClient;
 import ar.edu.utn.frc.atenas.documentacion.dto.CrearHitoRequest;
-import ar.edu.utn.frc.atenas.documentacion.dto.externo.CursoLectivoInterno;
+import ar.edu.utn.frc.atenas.documentacion.dto.externo.CursoLectivoDto;
 import ar.edu.utn.frc.atenas.documentacion.entity.Hito;
 import ar.edu.utn.frc.atenas.documentacion.repository.HitoRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,8 +48,8 @@ class HitoServiceTest {
                 .thenAnswer(inv -> ((Instant) inv.getArgument(0)).atOffset(ZoneOffset.of("-03:00")));
     }
 
-    private CursoLectivoInterno curso() {
-        return new CursoLectivoInterno(2L, 2026, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 12, 15));
+    private CursoLectivoDto curso() {
+        return new CursoLectivoDto(2L, 2026, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 12, 15));
     }
 
     @Test

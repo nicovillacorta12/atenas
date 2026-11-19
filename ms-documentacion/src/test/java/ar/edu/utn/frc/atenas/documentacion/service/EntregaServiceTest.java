@@ -13,8 +13,8 @@ import ar.edu.utn.frc.atenas.documentacion.client.CatedraClient;
 import ar.edu.utn.frc.atenas.documentacion.client.DriveClient;
 import ar.edu.utn.frc.atenas.documentacion.dto.RegistrarEntregaRequest;
 import ar.edu.utn.frc.atenas.documentacion.dto.externo.ArchivoDrive;
-import ar.edu.utn.frc.atenas.documentacion.dto.externo.EquipoInterno;
-import ar.edu.utn.frc.atenas.documentacion.dto.externo.EstudianteInterno;
+import ar.edu.utn.frc.atenas.documentacion.dto.externo.EquipoDto;
+import ar.edu.utn.frc.atenas.documentacion.dto.externo.EstudianteDto;
 import ar.edu.utn.frc.atenas.documentacion.entity.Entrega;
 import ar.edu.utn.frc.atenas.documentacion.entity.Hito;
 import ar.edu.utn.frc.atenas.documentacion.repository.ArchivoVerificadoRepository;
@@ -72,12 +72,12 @@ class EntregaServiceTest {
         return h;
     }
 
-    private EstudianteInterno estudiante(Long equipoId) {
-        return new EstudianteInterno(5L, "sub-alumno", true, 10L, 2L, equipoId);
+    private EstudianteDto estudiante(Long equipoId) {
+        return new EstudianteDto(5L, "sub-alumno", true, 10L, 2L, equipoId);
     }
 
-    private EquipoInterno equipoAsegurado() {
-        return new EquipoInterno(7L, "Eq", 10L, 2L, "ASEGURADO", true, "sub-alumno", List.of());
+    private EquipoDto equipoAsegurado() {
+        return new EquipoDto(7L, "Eq", 10L, 2L, "ASEGURADO", true, "sub-alumno", List.of());
     }
 
     @Test
@@ -102,7 +102,7 @@ class EntregaServiceTest {
     void registrar_noRepresentante() {
         when(hitoRepository.findById(3L)).thenReturn(java.util.Optional.of(hito()));
         when(catedraClient.obtenerEstudiantePorSub("sub-alumno")).thenReturn(estudiante(7L));
-        EquipoInterno eq = new EquipoInterno(7L, "Eq", 10L, 2L, "ASEGURADO", true, "otro", List.of());
+        EquipoDto eq = new EquipoDto(7L, "Eq", 10L, 2L, "ASEGURADO", true, "otro", List.of());
         when(catedraClient.obtenerEquipo(7L)).thenReturn(eq);
         assertThatThrownBy(() -> service.registrar(3L, new RegistrarEntregaRequest("https://drive.google.com/file/d/F1/view")))
                 .isInstanceOf(AccesoDenegadoException.class);
@@ -112,7 +112,7 @@ class EntregaServiceTest {
     void registrar_noAsegurado() {
         when(hitoRepository.findById(3L)).thenReturn(java.util.Optional.of(hito()));
         when(catedraClient.obtenerEstudiantePorSub("sub-alumno")).thenReturn(estudiante(7L));
-        EquipoInterno eq = new EquipoInterno(7L, "Eq", 10L, 2L, "ABIERTO", false, "sub-alumno", List.of());
+        EquipoDto eq = new EquipoDto(7L, "Eq", 10L, 2L, "ABIERTO", false, "sub-alumno", List.of());
         when(catedraClient.obtenerEquipo(7L)).thenReturn(eq);
         assertThatThrownBy(() -> service.registrar(3L, new RegistrarEntregaRequest("https://drive.google.com/file/d/F1/view")))
                 .isInstanceOf(ConflictoException.class);

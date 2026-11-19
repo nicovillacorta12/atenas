@@ -14,8 +14,8 @@ import ar.edu.utn.frc.atenas.documentacion.client.DriveClient;
 import ar.edu.utn.frc.atenas.documentacion.dto.RegistrarEntregaRequest;
 import ar.edu.utn.frc.atenas.documentacion.dto.EntregaResponse;
 import ar.edu.utn.frc.atenas.documentacion.dto.externo.ArchivoDrive;
-import ar.edu.utn.frc.atenas.documentacion.dto.externo.EquipoInterno;
-import ar.edu.utn.frc.atenas.documentacion.dto.externo.EstudianteInterno;
+import ar.edu.utn.frc.atenas.documentacion.dto.externo.EquipoDto;
+import ar.edu.utn.frc.atenas.documentacion.dto.externo.EstudianteDto;
 import ar.edu.utn.frc.atenas.documentacion.entity.ArchivoVerificado;
 import ar.edu.utn.frc.atenas.documentacion.entity.Entrega;
 import ar.edu.utn.frc.atenas.documentacion.entity.Hito;
@@ -72,8 +72,8 @@ public class EntregaService {
                 .orElseThrow(() -> new NoEncontradoException("Hito no encontrado"));
 
         // 2. ms-catedra
-        EstudianteInterno estudiante;
-        EquipoInterno equipo;
+        EstudianteDto estudiante;
+        EquipoDto equipo;
         try {
             estudiante = catedraClient.obtenerEstudiantePorSub(sub);
             if (estudiante.equipoId() == null) {

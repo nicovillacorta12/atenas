@@ -1,27 +1,37 @@
 package ar.edu.utn.frc.atenas.documentacion.client;
 
 import ar.edu.utn.frc.atenas.commons.error.ServicioNoDisponibleException;
-import ar.edu.utn.frc.atenas.documentacion.dto.externo.CursoLectivoInterno;
+import ar.edu.utn.frc.atenas.documentacion.dto.externo.CursoLectivoDto;
+import ar.edu.utn.frc.atenas.documentacion.dto.externo.EquipoDto;
+import ar.edu.utn.frc.atenas.documentacion.dto.externo.EstudianteDto;
 import org.springframework.stereotype.Component;
 
-/**
- * Implementacion provisional de CatedraClient. Sera reemplazada por la
- * implementacion real con RestClient en D-E1.
- */
+import java.util.List;
+
 @Component
 public class CatedraClientImpl implements CatedraClient {
     @Override
-    public CursoLectivoInterno obtenerCurso(Long id) {
+    public EquipoDto obtenerEquipo(Long equipoId) {
         throw new ServicioNoDisponibleException("CatedraClient no implementado (pendiente D-E1)");
     }
 
     @Override
-    public ar.edu.utn.frc.atenas.documentacion.dto.externo.EstudianteInterno obtenerEstudiantePorSub(String sub) {
+    public List<EquipoDto> listarEquipos(Long comisionLectivaId, Long cursoLectivoId) {
         throw new ServicioNoDisponibleException("CatedraClient no implementado (pendiente D-E1)");
     }
 
     @Override
-    public ar.edu.utn.frc.atenas.documentacion.dto.externo.EquipoInterno obtenerEquipo(Long id) {
+    public EstudianteDto obtenerEstudiantePorSub(String sub) {
+        throw new ServicioNoDisponibleException("CatedraClient no implementado (pendiente D-E1)");
+    }
+
+    @Override
+    public boolean docenteAsignado(Long comisionLectivaId, String sub) {
+        throw new ServicioNoDisponibleException("CatedraClient no implementado (pendiente D-E1)");
+    }
+
+    @Override
+    public CursoLectivoDto obtenerCurso(Long cursoLectivoId) {
         throw new ServicioNoDisponibleException("CatedraClient no implementado (pendiente D-E1)");
     }
 }
