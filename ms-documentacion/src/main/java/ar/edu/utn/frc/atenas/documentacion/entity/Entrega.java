@@ -13,6 +13,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import java.time.Instant;
+
 /**
  * Entrega de un equipo para un hito.
  *
@@ -45,6 +47,15 @@ public class Entrega {
     private Boolean tardia;
 
     private Integer nota;
+
+    @Column(name = "modificado_post_entrega")
+    private Boolean modificadoPostEntrega;
+
+    @Column(name = "fecha_correccion")
+    private Instant fechaCorreccion;
+
+    @Column(name = "corregida_por_sub")
+    private String corregidaPorSub;
 
     public Entrega() {
     }
@@ -105,5 +116,29 @@ public class Entrega {
 
     public void setNota(Integer nota) {
         this.nota = nota;
+    }
+
+    public Boolean getModificadoPostEntrega() {
+        return modificadoPostEntrega;
+    }
+
+    public void setModificadoPostEntrega(Boolean modificadoPostEntrega) {
+        this.modificadoPostEntrega = modificadoPostEntrega;
+    }
+
+    public Instant getFechaCorreccion() {
+        return fechaCorreccion;
+    }
+
+    public void setFechaCorreccion(Instant fechaCorreccion) {
+        this.fechaCorreccion = fechaCorreccion;
+    }
+
+    public String getCorregidaPorSub() {
+        return corregidaPorSub;
+    }
+
+    public void setCorregidaPorSub(String corregidaPorSub) {
+        this.corregidaPorSub = corregidaPorSub;
     }
 }
