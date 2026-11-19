@@ -1,10 +1,11 @@
 package ar.edu.utn.frc.atenas.documentacion.client;
 
 import ar.edu.utn.frc.atenas.commons.error.ServicioNoDisponibleException;
+import ar.edu.utn.frc.atenas.commons.error.SolicitudInvalidaException;
 import ar.edu.utn.frc.atenas.commons.http.AtenasHttpProperties;
-import ar.edu.utn.frc.atenas.commons.http.TraductorErroresHttp;
 import ar.edu.utn.frc.atenas.documentacion.config.DriveProperties;
 import ar.edu.utn.frc.atenas.documentacion.dto.externo.ArchivoDriveDto;
+import ar.edu.utn.frc.atenas.documentacion.exception.ArchivoNoAccesibleException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -12,20 +13,26 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Implementación de {@link DriveClient} sobre Google Drive API v3.
  *
- * Se construye un RestClient propio con los timeouts de commons, pero sin el
- * interceptor de JWT: ese token pertenece a Keycloak y no debe enviarse a
- * Google. La autenticación con Drive se hace mediante API key en la query.
- *
- * Cualquier falla se traduce a una excepción de commons para que D06 pueda
- * degradar el resultado a NO_VERIFICADO sin devolver 503.
+ * Usa los timeouts de commons pero no el interceptor de JWT: el token de
+ * Keycloak no debe enviarse a Google. La API key viaja en la query.
  */
 @Component
 public class DriveRestClient implements DriveClient {
 
     private static final String SERVICIO = "Google Drive";
+
+    private static final Pattern[] PATRONES = new Pattern[]{
+            Pattern.compile("drive\\.google\\.com/file/d/([^/]+)"),
+            Pattern.compile("docs\\.google\\.com/document/d/([^/]+)"),
+            Pattern.compile("open\\?id=([^&]+)")
+    };
 
     private final RestClient restClient;
     private final DriveProperties propiedades;
@@ -39,6 +46,20 @@ public class DriveRestClient implements DriveClient {
     DriveRestClient(RestClient restClient, DriveProperties propiedades) {
         this.restClient = restClient;
         this.propiedades = propiedades;
+    }
+
+    @Override
+    public String extraerFileId(String enlace) {
+        if (enlace == null || enlace.isBlank()) {
+            throw new SolicitudInvalidaException("El enlace de Drive es obligatorio");
+        }
+        for (Pattern patron : PATRONES) {
+            Matcher matcher = patron.matcher(enlace);
+            if (matcher.find()) {
+                return matcher.group(1);
+            }
+        }
+        throw new SolicitudInvalidaException("No se pudo reconocer el fileId del enlace");
     }
 
     @Override
@@ -62,6 +83,8 @@ public class DriveRestClient implements DriveClient {
                     respuesta.name(),
                     respuesta.mimeType(),
                     respuesta.modifiedTime());
+        } catch (ArchivoNoAccesibleException | ServicioNoDisponibleException excepcion) {
+            throw excepcion;
         } catch (RestClientException excepcion) {
             throw new ServicioNoDisponibleException(
                     "No se pudo consultar el archivo en " + SERVICIO);
@@ -79,8 +102,20 @@ public class DriveRestClient implements DriveClient {
         return RestClient.builder()
                 .baseUrl(propiedades.getUrlBase())
                 .requestFactory(fabrica)
-                .defaultStatusHandler(HttpStatusCode::isError,
-                        (solicitud, respuesta) -> TraductorErroresHttp.evaluar(respuesta))
+                .defaultStatusHandler(HttpStatusCode::isError, (solicitud, respuesta) -> {
+                    int codigo = respuesta.getStatusCode().value();
+                    String cuerpo = new String(respuesta.getBody().readAllBytes(),
+                            StandardCharsets.UTF_8);
+                    if (codigo == 404
+                            || (codigo == 403
+                            && (cuerpo.contains("notFound")
+                            || cuerpo.toLowerCase().contains("permission")))) {
+                        throw new ArchivoNoAccesibleException(
+                                "El archivo de Drive no existe o no es público");
+                    }
+                    throw new ServicioNoDisponibleException(
+                            "Google Drive no está disponible");
+                })
                 .build();
     }
 }

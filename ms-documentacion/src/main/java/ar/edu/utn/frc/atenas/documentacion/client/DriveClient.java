@@ -9,5 +9,8 @@ package ar.edu.utn.frc.atenas.documentacion.client;
  */
 public interface DriveClient {
 
+    /** Extrae el fileId de los formatos habituales de enlaces de Drive/Docs. */
+    String extraerFileId(String enlace);
+
     ArchivoDrive obtenerArchivo(String driveFileId);
 }

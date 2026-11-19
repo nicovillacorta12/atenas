@@ -14,6 +14,8 @@ public interface EntregaRepository extends JpaRepository<Entrega, Long> {
     List<Entrega> findByHitoIdInAndEquipoIdIn(Collection<Long> hitoIds,
                                                Collection<Long> equipoIds);
 
+    Optional<Entrega> findByHitoIdAndEquipoId(Long hitoId, Long equipoId);
+
     @Override
     @EntityGraph(attributePaths = "hito")
     Optional<Entrega> findById(Long id);

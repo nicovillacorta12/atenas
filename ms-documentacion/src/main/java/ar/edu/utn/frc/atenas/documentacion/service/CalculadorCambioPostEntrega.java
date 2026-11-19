@@ -8,6 +8,7 @@ import ar.edu.utn.frc.atenas.documentacion.dto.CambioPostEntrega;
 import ar.edu.utn.frc.atenas.documentacion.entity.ArchivoVerificado;
 import ar.edu.utn.frc.atenas.documentacion.entity.Entrega;
 import ar.edu.utn.frc.atenas.documentacion.entity.EstadoEntrega;
+import ar.edu.utn.frc.atenas.documentacion.exception.ArchivoNoAccesibleException;
 import org.springframework.stereotype.Component;
 
 /**
@@ -63,7 +64,8 @@ public class CalculadorCambioPostEntrega {
 
             return actual.modifiedTime().isAfter(archivo.getModifiedTimeEntrega())
                     && actual.modifiedTime().isAfter(entrega.getHito().getFechaLimite());
-        } catch (NoEncontradoException | ServicioNoDisponibleException excepcion) {
+        } catch (NoEncontradoException | ServicioNoDisponibleException
+                 | ArchivoNoAccesibleException excepcion) {
             return null;
         }
     }

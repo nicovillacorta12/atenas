@@ -1,9 +1,8 @@
 package ar.edu.utn.frc.atenas.documentacion.client;
 
-import ar.edu.utn.frc.atenas.commons.error.NoEncontradoException;
 import ar.edu.utn.frc.atenas.commons.error.ServicioNoDisponibleException;
-import ar.edu.utn.frc.atenas.commons.http.TraductorErroresHttp;
 import ar.edu.utn.frc.atenas.documentacion.config.DriveProperties;
+import ar.edu.utn.frc.atenas.documentacion.exception.ArchivoNoAccesibleException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,8 +39,12 @@ class DriveRestClientTest {
 
         RestClient.Builder builder = RestClient.builder()
                 .baseUrl("https://www.googleapis.com/drive/v3")
-                .defaultStatusHandler(HttpStatusCode::isError,
-                        (solicitud, respuesta) -> TraductorErroresHttp.evaluar(respuesta));
+                .defaultStatusHandler(HttpStatusCode::isError, (solicitud, respuesta) -> {
+                    if (respuesta.getStatusCode().value() == 404) {
+                        throw new ArchivoNoAccesibleException("no accesible");
+                    }
+                    throw new ServicioNoDisponibleException("Drive no disponible");
+                });
         servidor = MockRestServiceServer.bindTo(builder).build();
         cliente = new DriveRestClient(builder.build(), propiedades);
     }
@@ -72,12 +75,13 @@ class DriveRestClientTest {
     }
 
     @Test
-    @DisplayName("Drive 404 se traduce a NoEncontradoException")
-    void deberiaLanzarNoEncontrado_cuandoDriveResponde404() {
+    @DisplayName("Drive 404 se traduce a ArchivoNoAccesibleException")
+    void deberiaLanzarArchivoNoAccesible_cuandoDriveResponde404() {
         servidor.expect(once(), method(HttpMethod.GET))
                 .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-        assertThrows(NoEncontradoException.class, () -> cliente.obtenerArchivo("file-1"));
+        assertThrows(ArchivoNoAccesibleException.class,
+                () -> cliente.obtenerArchivo("file-1"));
     }
 
     @Test

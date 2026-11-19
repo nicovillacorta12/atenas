@@ -1,10 +1,10 @@
 package ar.edu.utn.frc.atenas.documentacion.dto;
 
-import ar.edu.utn.frc.atenas.documentacion.entity.Entrega;
 import ar.edu.utn.frc.atenas.documentacion.entity.EstadoEntrega;
 
 import java.time.OffsetDateTime;
 
+/** Respuesta de D03 al registrar una entrega. */
 public record EntregaResponse(
         Long id,
         Long hitoId,
@@ -13,5 +13,5 @@ public record EntregaResponse(
         Boolean tardia,
         OffsetDateTime fechaEntrega,
         String enlace,
-        Long archivoId
-) { }
+        Long archivoId) {
+}
