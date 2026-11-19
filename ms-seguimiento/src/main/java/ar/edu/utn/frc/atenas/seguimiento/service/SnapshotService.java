@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -130,5 +132,36 @@ public class SnapshotService {
         log.warn("Snapshot NO_DISPONIBLE creado para el repositorio {} y el sprint {} ({})",
                 repositorio.getId(), hitoId, motivo);
         return noDisponible;
+    }
+
+    /**
+     * Devuelve el último snapshot del sprint solo si ya se calculó después de la fecha límite.
+     * Ese sprint está cerrado: los commits posteriores no cuentan (RN27) y volver a consultar
+     * GitHub no cambiaría el resultado, por lo que la actualización lo omite.
+     */
+    public Optional<SnapshotActividad> ultimoActualizadoDespuesDelLimite(RepositorioVinculado repositorio,
+                                                                        Long hitoId, Instant limite) {
+        Optional<SnapshotActividad> ultimo = snapshots
+                .findFirstByRepositorioIdAndHitoIdOrderByFechaConsultaDescIdDesc(repositorio.getId(), hitoId);
+        return ultimo.filter(snapshot -> snapshot.getEstado() == EstadoSnapshot.ACTUALIZADO
+                && snapshot.getFechaConsulta().isAfter(limite));
+    }
+
+    /**
+     * Degrada el último snapshot de cada sprint conocido del repositorio cuando falla I01 o I06.
+     * Si no se pudo obtener la lista de sprints, al menos se conserva la evidencia de los que
+     * ya se habían calculado. No crea snapshots nuevos porque no se conoce el id del hito.
+     */
+    @Transactional
+    public List<SnapshotActividad> registrarFallaDeServicio(RepositorioVinculado repositorio, MotivoFalla motivo,
+                                                            Instant ahora) {
+        Map<Long, SnapshotActividad> ultimosPorSprint = new LinkedHashMap<>();
+        for (SnapshotActividad snapshot : snapshots
+                .findAllByRepositorioIdOrderByFechaConsultaDescIdDesc(repositorio.getId())) {
+            ultimosPorSprint.putIfAbsent(snapshot.getHitoId(), snapshot);
+        }
+        return ultimosPorSprint.values().stream()
+                .map(snapshot -> registrarFalla(repositorio, snapshot.getHitoId(), motivo, ahora))
+                .toList();
     }
 }

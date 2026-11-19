@@ -46,3 +46,5 @@ atenas:
   actividad:
     # Fracción del promedio de commits por integrante bajo la cual se marca "baja contribución" (1/2).
     umbral-baja-contribucion: 0.5
+    # Tarea nocturna: todos los días a las 02:00, interpretado por @Scheduled en zona Argentina.
+    cron: "0 0 2 * * *"

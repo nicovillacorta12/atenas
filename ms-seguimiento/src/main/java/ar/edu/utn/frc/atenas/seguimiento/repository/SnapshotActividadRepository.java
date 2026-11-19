@@ -3,6 +3,7 @@ package ar.edu.utn.frc.atenas.seguimiento.repository;
 import ar.edu.utn.frc.atenas.seguimiento.entity.SnapshotActividad;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface SnapshotActividadRepository extends JpaRepository<SnapshotActividad, Long> {
@@ -13,4 +14,7 @@ public interface SnapshotActividadRepository extends JpaRepository<SnapshotActiv
      */
     Optional<SnapshotActividad> findFirstByRepositorioIdAndHitoIdOrderByFechaConsultaDescIdDesc(
             Long repositorioId, Long hitoId);
+
+    /** Todos los snapshots del repositorio, de más reciente a más viejo, para degradar por sprint. */
+    List<SnapshotActividad> findAllByRepositorioIdOrderByFechaConsultaDescIdDesc(Long repositorioId);
 }

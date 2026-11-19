@@ -191,4 +191,54 @@ class SnapshotServiceTest {
 
         verify(snapshots, never()).save(any());
     }
+
+    // ---------------------------------------------------------------- omisión y falla de servicio
+
+    @Test
+    @DisplayName("RN-27: detecta un sprint cerrado cuando el último snapshot se calculó después del límite")
+    void deberiaDevolverElSnapshot_cuandoSeActualizoDespuesDelLimite() {
+        Instant limite = Instant.parse("2026-11-10T12:00:00Z");
+        SnapshotActividad posterior = SnapshotActividad.builder().id(5L).repositorio(repositorio).hitoId(HITO)
+                .fechaConsulta(AHORA).estado(EstadoSnapshot.ACTUALIZADO)
+                .commitsTotales(9).commitsSinAtribuir(1).build();
+        when(snapshots.findFirstByRepositorioIdAndHitoIdOrderByFechaConsultaDescIdDesc(1L, HITO))
+                .thenReturn(Optional.of(posterior));
+
+        assertThat(servicio.ultimoActualizadoDespuesDelLimite(repositorio, HITO, limite)).contains(posterior);
+    }
+
+    @Test
+    @DisplayName("RN-27: no omite el sprint si el snapshot es anterior al límite o no está ACTUALIZADO")
+    void deberiaNoDevolverSnapshot_cuandoNoEsUnSprintCerrado() {
+        Instant limite = Instant.parse("2026-11-21T03:00:00Z");
+        when(snapshots.findFirstByRepositorioIdAndHitoIdOrderByFechaConsultaDescIdDesc(1L, HITO))
+                .thenReturn(Optional.of(snapshotPrevio(EstadoSnapshot.ACTUALIZADO)),
+                        Optional.of(snapshotPrevio(EstadoSnapshot.DESACTUALIZADO)));
+
+        assertThat(servicio.ultimoActualizadoDespuesDelLimite(repositorio, HITO, limite)).isEmpty();
+        assertThat(servicio.ultimoActualizadoDespuesDelLimite(repositorio, HITO, limite)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("RN-28: si falla un servicio interno, degrada el último snapshot de cada sprint conocido")
+    void deberiaDegradarUnSnapshotPorSprint_cuandoFallaUnServicioInterno() {
+        Long otroHito = 8L;
+        SnapshotActividad primero = snapshotPrevio(EstadoSnapshot.ACTUALIZADO);
+        SnapshotActividad segundo = SnapshotActividad.builder().id(6L).repositorio(repositorio).hitoId(otroHito)
+                .fechaConsulta(ANTES).estado(EstadoSnapshot.ACTUALIZADO).commitsTotales(4).commitsSinAtribuir(0).build();
+        when(snapshots.findAllByRepositorioIdOrderByFechaConsultaDescIdDesc(1L))
+                .thenReturn(List.of(segundo, primero));
+        when(snapshots.findFirstByRepositorioIdAndHitoIdOrderByFechaConsultaDescIdDesc(1L, otroHito))
+                .thenReturn(Optional.of(segundo));
+        when(snapshots.findFirstByRepositorioIdAndHitoIdOrderByFechaConsultaDescIdDesc(1L, HITO))
+                .thenReturn(Optional.of(primero));
+
+        List<SnapshotActividad> degradados = servicio.registrarFallaDeServicio(
+                repositorio, MotivoFalla.NO_RESPONDE, AHORA);
+
+        assertThat(degradados).hasSize(2)
+                .allSatisfy(snapshot -> assertThat(snapshot.getEstado()).isEqualTo(EstadoSnapshot.DESACTUALIZADO));
+        verify(snapshots).save(primero);
+        verify(snapshots).save(segundo);
+    }
 }

@@ -15,3 +15,12 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: http://localhost:8081/realms/atenas/protocol/openid-connect/certs
+      client:
+        registration:
+          keycloak:
+            client-id: atenas-seguimiento-job
+            client-secret: ${KC_SEGUIMIENTO_JOB_SECRET:}
+            authorization-grant-type: client_credentials
+        provider:
+          keycloak:
+            token-uri: http://localhost:8081/realms/atenas/protocol/openid-connect/token
