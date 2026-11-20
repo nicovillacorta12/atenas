@@ -16,3 +16,7 @@ target/
 
 # Ayuda generada por Maven
 HELP.md
+
+# Instrucciones locales de asistentes de IA
+AGENTS.md
+CLAUDE.md
