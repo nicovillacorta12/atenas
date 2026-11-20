@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .permitAll()
 
                         // Estructura académica: solo el jefe la administra.
+                        .requestMatchers(HttpMethod.POST, "/api/catedra/dev/seed-e1").hasRole(JEFE_CATEDRA)
                         .requestMatchers(HttpMethod.POST, "/api/catedra/cursos-lectivos").hasRole(JEFE_CATEDRA)
                         .requestMatchers(HttpMethod.GET, "/api/catedra/cursos-lectivos").hasAnyRole(JEFE_CATEDRA, DOCENTE)
                         .requestMatchers(HttpMethod.POST, "/api/catedra/comisiones").hasRole(JEFE_CATEDRA)

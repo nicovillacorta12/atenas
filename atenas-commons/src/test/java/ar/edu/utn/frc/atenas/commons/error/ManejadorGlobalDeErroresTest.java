@@ -12,6 +12,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.MDC;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.web.servlet.MockMvc;
@@ -21,7 +22,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.stream.Stream;
 
@@ -104,6 +107,27 @@ class ManejadorGlobalDeErroresTest {
     }
 
     @Test
+    @DisplayName("400: falta un parámetro requerido y no se transforma en 500")
+    void deberiaResponder400_cuandoFaltaUnParametroRequerido() throws Exception {
+        MDC.put(CorrelationIdFilter.NOMBRE_MDC, "traza-parametro");
+
+        mockMvc.perform(get("/prueba/parametro"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Solicitud inválida"))
+                .andExpect(jsonPath("$.detail").value("Falta el parámetro requerido: dato"))
+                .andExpect(jsonPath("$.correlationId").value("traza-parametro"));
+    }
+
+    @Test
+    @DisplayName("404: una ruta sin recurso responde ProblemDetail")
+    void deberiaResponder404_cuandoNoExisteElRecurso() throws Exception {
+        mockMvc.perform(get("/prueba/recurso-inexistente"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.title").value("No encontrado"))
+                .andExpect(jsonPath("$.detail").value("No existe el recurso solicitado"));
+    }
+
+    @Test
     @DisplayName("403: un AccessDeniedException se responde con ProblemDetail")
     void deberiaResponder403_cuandoSeDeniegaElAcceso() throws Exception {
         mockMvc.perform(get("/prueba/acceso-denegado"))
@@ -147,6 +171,15 @@ class ManejadorGlobalDeErroresTest {
         @GetMapping("/acceso-denegado")
         void accesoDenegado() {
             throw new AccessDeniedException("Sin permiso");
+        }
+
+        @GetMapping("/parametro")
+        void parametroRequerido(@RequestParam("dato") Long dato) {
+        }
+
+        @GetMapping("/recurso-inexistente")
+        void recursoInexistente() throws NoResourceFoundException {
+            throw new NoResourceFoundException(HttpMethod.GET, "/prueba/recurso-inexistente");
         }
 
         @PostMapping("/validacion")

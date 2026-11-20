@@ -25,12 +25,24 @@ import java.util.concurrent.TimeoutException;
  */
 public class InterceptorHttpAtenas implements ClientHttpRequestInterceptor {
 
+    public static final String CABECERA_SIMULAR_FALLA = "X-Simular-Falla";
+
     private static final Logger log = LoggerFactory.getLogger(InterceptorHttpAtenas.class);
 
     @Override
     public ClientHttpResponse intercept(HttpRequest solicitud,
                                         byte[] cuerpo,
                                         ClientHttpRequestExecution ejecucion) throws IOException {
+        String servicioSimulado = cabeceraDelRequest(CABECERA_SIMULAR_FALLA);
+        String hostDestino = solicitud.getURI().getHost();
+        if (servicioSimulado != null && hostDestino != null
+                && servicioSimulado.equalsIgnoreCase(hostDestino)) {
+            // Se usa la misma excepción que produciría una conexión caída para
+            // ejercitar los flujos reales de 503 y degradación.
+            log.warn("Falla simulada para el servicio {}", servicioSimulado);
+            throw new SocketTimeoutException("Falla simulada de " + servicioSimulado);
+        }
+
         String token = tokenDelUsuario();
         if (token != null && !token.isBlank()) {
             solicitud.getHeaders().setBearerAuth(token);
@@ -68,8 +80,12 @@ public class InterceptorHttpAtenas implements ClientHttpRequestInterceptor {
         if (correlationId != null && !correlationId.isBlank()) {
             return correlationId;
         }
+        return cabeceraDelRequest(CorrelationIdFilter.CABECERA);
+    }
+
+    private String cabeceraDelRequest(String nombre) {
         if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes atributos) {
-            return atributos.getRequest().getHeader(CorrelationIdFilter.CABECERA);
+            return atributos.getRequest().getHeader(nombre);
         }
         return null;
     }

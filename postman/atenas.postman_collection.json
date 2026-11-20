@@ -5,10 +5,31 @@
     "description": "Colección base del backend Atenas. Incluye la carpeta 00 Smoke para verificar la infraestructura y las carpetas 01 a 08, que se completan a medida que se implementan las historias.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "const falla = {",
+          "  'S08 Token de GitHub invalido': 'github',",
+          "  'S09 Dashboard con documentacion pausada': 'ms-documentacion',",
+          "  'S10 Dashboard de equipo con documentacion pausada': 'ms-documentacion',",
+          "  'D04 con ms-catedra pausado': 'ms-catedra',",
+          "  'S08 Con I01 caida no degrada snapshots para docente': 'ms-catedra',",
+          "  'S09 Dashboard con ms-catedra pausado': 'ms-catedra'",
+          "}[pm.info.requestName];",
+          "if (falla) {",
+          "  pm.request.headers.upsert({ key: 'X-Simular-Falla', value: falla });",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
   "item": [
     {
       "name": "00 Tokens",
-      "description": "Obtiene tokens OAuth 2.0 Authorization Code con el cliente atenas-postman. Después de Get New Access Token, copiar el Access Token y pegarlo en la variable indicada del environment Atenas Local. Los usuarios nuevos usan CLAVE_TEMPORAL y Keycloak pide cambiarla en el primer login.",
+      "description": "Obtiene tokens OAuth 2.0 Authorization Code con el cliente atenas-postman. Después de Get New Access Token, copiar el Access Token y pegarlo en la variable indicada del environment Atenas Local. La request Seed E1 + todos los tokens reemplaza la ejecución manual de 01 y genera todos los JWT de prueba.",
       "item": [
         {
           "name": "Token jefe",
@@ -91,6 +112,78 @@
                   "pm.test('GET /actuator/health responde 200', function () {",
                   "    pm.response.to.have.status(200);",
                   "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed E1 + todos los tokens",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/dev/seed-e1",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "dev",
+                "seed-e1"
+              ]
+            },
+            "description": "Prepara la carpeta 01 completa y devuelve todos los JWT. Requiere token-jefe.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token-jefe}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Seed E1 responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const r = pm.response.json();",
+                  "    pm.environment.set('cursoLectivoId', r.cursoLectivoId);",
+                  "    pm.environment.set('comisionId', r.comisionId);",
+                  "    pm.environment.set('comisionLectivaId', r.comisionLectivaId);",
+                  "    pm.environment.set('comision2Id', r.comision2Id);",
+                  "    pm.environment.set('comisionLectiva2Id', r.comisionLectiva2Id);",
+                  "    pm.environment.set('docenteId', r.docenteId);",
+                  "    pm.environment.set('docenteBId', r.docenteBId);",
+                  "    pm.environment.set('estudianteRepresentanteId', r.estudianteRepresentanteId);",
+                  "    pm.environment.set('estudianteIntegranteId', r.estudianteIntegranteId);",
+                  "    pm.environment.set('estudianteBId', r.estudianteBId);",
+                  "    pm.environment.set('estudianteSub', r.estudianteSub);",
+                  "    pm.environment.set('token-jefe', r.tokens.jefe);",
+                  "    pm.environment.set('token-docente-a', r.tokens['docente-a']);",
+                  "    pm.environment.set('token-docente-b', r.tokens['docente-b']);",
+                  "    pm.environment.set('token-representante', r.tokens.representante);",
+                  "    pm.environment.set('token-integrante', r.tokens.integrante);",
+                  "    pm.environment.set('token-alumno-b', r.tokens['alumno-b']);",
+                  "    pm.test('Seed E1 devuelve todos los tokens', function () {",
+                  "        pm.expect(Object.keys(r.tokens)).to.have.lengthOf(6);",
+                  "    });",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -2853,6 +2946,12 @@
                 "api",
                 "documentacion",
                 "hitos"
+              ],
+              "query": [
+                {
+                  "key": "cursoLectivoId",
+                  "value": "{{cursoLectivoId}}"
+                }
               ]
             },
             "auth": {
@@ -2973,6 +3072,12 @@
                 "api",
                 "documentacion",
                 "entregas"
+              ],
+              "query": [
+                {
+                  "key": "comisionLectivaId",
+                  "value": "{{comisionLectivaId}}"
+                }
               ]
             },
             "auth": {
@@ -3022,6 +3127,16 @@
                 "api",
                 "documentacion",
                 "entregas"
+              ],
+              "query": [
+                {
+                  "key": "comisionLectivaId",
+                  "value": "{{comisionLectivaId}}"
+                },
+                {
+                  "key": "hitoId",
+                  "value": "{{hitoId}}"
+                }
               ]
             },
             "auth": {
@@ -3160,6 +3275,75 @@
           "response": []
         },
         {
+          "name": "D01 Crear hito vigente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('D01 hito vigente responde 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    pm.environment.set('hitoVigenteId', pm.response.json().id);",
+                  "}",
+                  "pm.test('D01 hito vigente guarda hitoVigenteId', function () {",
+                  "    pm.expect(pm.environment.get('hitoVigenteId')).to.be.a('number');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cursoLectivoId\": {{cursoLectivoId}},\n  \"nombre\": \"Sprint vigente\",\n  \"tipo\": \"SPRINT\",\n  \"orden\": 2,\n  \"fechaInicio\": \"2026-11-01T00:00:00-03:00\",\n  \"fechaLimite\": \"2026-12-10T23:59:59-03:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/documentacion/hitos",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "documentacion",
+                "hitos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token-jefe}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Hito abierto para probar la degradación de actividad con token inválido."
+          },
+          "response": []
+        },
+        {
           "name": "S08 Actualizar actividad",
           "event": [
             {
@@ -3233,9 +3417,9 @@
                   "});",
                   "pm.test('S09 compone equipos con entregas disponibles', function () {",
                   "    const cuerpos = pm.response.json();",
-                  "    pm.expect(cuerpos).to.be.an('array').that.is.not.empty;",
-                  "    cuerpos.forEach(dashboard => pm.expect(dashboard.entregas.disponible).to.eql(true));",
-                  "    const equipo = cuerpos.find(dashboard => dashboard.equipoId === Number(pm.environment.get('equipo1Id')));",
+                  "    pm.expect(cuerpos.equipos).to.be.an('array').that.is.not.empty;",
+                  "    cuerpos.equipos.forEach(dashboard => pm.expect(dashboard.entregas.disponible).to.eql(true));",
+                  "    const equipo = cuerpos.equipos.find(dashboard => dashboard.equipoId === Number(pm.environment.get('equipo1Id')));",
                   "    pm.expect(equipo, 'el equipo 1 debe estar en el dashboard').to.exist;",
                   "    pm.expect(equipo.actividad.disponible).to.eql(true);",
                   "    pm.expect(equipo.actividad.snapshots).to.be.an('array').that.is.not.empty;",
@@ -3264,6 +3448,12 @@
                 "seguimiento",
                 "dashboard",
                 "equipos"
+              ],
+              "query": [
+                {
+                  "key": "comisionLectivaId",
+                  "value": "{{comisionLectivaId}}"
+                }
               ]
             },
             "auth": {
@@ -4356,6 +4546,58 @@
           }
         },
         {
+          "name": "C20 Estudiante B sale del equipo 4",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('C20 Estudiante B sale del equipo 4 responde 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/catedra/equipos/{{equipo4Id}}/integrantes/{{estudianteBId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "catedra",
+                "equipos",
+                "{{equipo4Id}}",
+                "integrantes",
+                "{{estudianteBId}}"
+              ]
+            },
+            "description": "Deja a B sin equipo para que D03 Alumno no representante responda 403.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token-alumno-b}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "C16 Crear equipo 3 en otra comisión",
           "event": [
             {
@@ -5071,6 +5313,12 @@
                 "seguimiento",
                 "dashboard",
                 "equipos"
+              ],
+              "query": [
+                {
+                  "key": "comisionLectivaId",
+                  "value": "{{comisionLectivaId}}"
+                }
               ]
             },
             "auth": {
@@ -5153,14 +5401,13 @@
                   "pm.test('S08 con token invalido responde 200', function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test('S08 deja los snapshots desactualizados conservando datos', function () {",
+                  "pm.test('S08 deja el sprint vigente DESACTUALIZADO conservando datos', function () {",
                   "    const cuerpo = pm.response.json();",
-                  "    pm.expect(cuerpo.snapshots).to.be.an('array').that.is.not.empty;",
-                  "    cuerpo.snapshots.forEach(snapshot => {",
-                  "        pm.expect(snapshot.estado).to.eql('DESACTUALIZADO');",
-                  "        pm.expect(snapshot.commitsTotales).to.be.a('number');",
-                  "        pm.expect(snapshot.commitsSinAtribuir).to.be.a('number');",
-                  "    });",
+                  "    const snapshot = cuerpo.snapshots.find(s => s.hitoId === Number(pm.environment.get('hitoVigenteId')));",
+                  "    pm.expect(snapshot, 'debe existir el snapshot del hito vigente').to.exist;",
+                  "    pm.expect(snapshot.estado).to.eql('DESACTUALIZADO');",
+                  "    pm.expect(snapshot.commitsTotales).to.be.a('number');",
+                  "    pm.expect(snapshot.commitsSinAtribuir).to.be.a('number');",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -5214,11 +5461,12 @@
                   "pm.test('Dashboard tras token invalido responde 200', function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test('Dashboard expone los snapshots desactualizados', function () {",
+                  "pm.test('Dashboard expone el sprint vigente desactualizado', function () {",
                   "    const cuerpo = pm.response.json();",
                   "    pm.expect(cuerpo.actividad.disponible).to.eql(true);",
-                  "    pm.expect(cuerpo.actividad.snapshots).to.be.an('array').that.is.not.empty;",
-                  "    cuerpo.actividad.snapshots.forEach(snapshot => pm.expect(snapshot.estado).to.eql('DESACTUALIZADO'));",
+                  "    const snapshot = cuerpo.actividad.snapshots.find(s => s.hitoId === Number(pm.environment.get('hitoVigenteId')));",
+                  "    pm.expect(snapshot, 'debe existir el snapshot del hito vigente').to.exist;",
+                  "    pm.expect(snapshot.estado).to.eql('DESACTUALIZADO');",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -5273,8 +5521,8 @@
                   "});",
                   "pm.test('S09 marca entregas no disponibles y sin hitos', function () {",
                   "    const cuerpos = pm.response.json();",
-                  "    pm.expect(cuerpos).to.be.an('array').that.is.not.empty;",
-                  "    cuerpos.forEach(dashboard => {",
+                  "    pm.expect(cuerpos.equipos).to.be.an('array').that.is.not.empty;",
+                  "    cuerpos.equipos.forEach(dashboard => {",
                   "        pm.expect(dashboard.entregas.disponible).to.eql(false);",
                   "        pm.expect(dashboard.entregas.hitos).to.be.empty;",
                   "    });",
@@ -5303,6 +5551,12 @@
                 "seguimiento",
                 "dashboard",
                 "equipos"
+              ],
+              "query": [
+                {
+                  "key": "comisionLectivaId",
+                  "value": "{{comisionLectivaId}}"
+                }
               ]
             },
             "auth": {
@@ -5408,6 +5662,12 @@
                 "api",
                 "documentacion",
                 "entregas"
+              ],
+              "query": [
+                {
+                  "key": "comisionLectivaId",
+                  "value": "{{comisionLectivaId}}"
+                }
               ]
             },
             "auth": {
@@ -5521,6 +5781,12 @@
                 "seguimiento",
                 "dashboard",
                 "equipos"
+              ],
+              "query": [
+                {
+                  "key": "comisionLectivaId",
+                  "value": "{{comisionLectivaId}}"
+                }
               ]
             },
             "auth": {

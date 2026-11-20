@@ -4,6 +4,7 @@ import ar.edu.utn.frc.atenas.commons.error.NoEncontradoException;
 import ar.edu.utn.frc.atenas.commons.error.ServicioNoDisponibleException;
 import ar.edu.utn.frc.atenas.commons.error.SolicitudInvalidaException;
 import ar.edu.utn.frc.atenas.commons.http.AtenasHttpProperties;
+import ar.edu.utn.frc.atenas.commons.http.InterceptorHttpAtenas;
 import ar.edu.utn.frc.atenas.seguimiento.config.GitHubProperties;
 import ar.edu.utn.frc.atenas.seguimiento.dto.externo.GitHubCommitDto;
 import ar.edu.utn.frc.atenas.seguimiento.dto.externo.GitHubRepositorioDto;
@@ -18,6 +19,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.util.UriBuilder;
 
 import java.net.URI;
@@ -242,6 +245,10 @@ public class GitHubRestClient implements GitHubClient {
      */
     private <R> R ejecutar(Function<UriBuilder, URI> uri,
                            RestClient.RequestHeadersSpec.ExchangeFunction<R> funcion) {
+        if (debeSimularFallaGithub()) {
+            log.warn("Falla de GitHub simulada por cabecera de prueba");
+            throw new ServicioNoDisponibleException("GitHub no respondió a tiempo", "RN-28");
+        }
         try {
             return restClient.get().uri(uri).exchange(funcion);
         } catch (ResourceAccessException excepcion) {
@@ -258,6 +265,14 @@ public class GitHubRestClient implements GitHubClient {
         log.warn("GitHub respondió con el estado {}", estado.value());
         return new ServicioNoDisponibleException(
                 "GitHub respondió con el estado " + estado.value(), "RN-28");
+    }
+
+    private boolean debeSimularFallaGithub() {
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes atributos) {
+            return "github".equalsIgnoreCase(
+                    atributos.getRequest().getHeader(InterceptorHttpAtenas.CABECERA_SIMULAR_FALLA));
+        }
+        return false;
     }
 
     private boolean esVacio(String texto) {

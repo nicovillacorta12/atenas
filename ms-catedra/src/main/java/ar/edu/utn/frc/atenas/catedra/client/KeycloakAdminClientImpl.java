@@ -24,6 +24,7 @@ import org.springframework.web.client.RestClientResponseException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Implementación del Adapter de Keycloak. Obtiene un token de servicio con
@@ -95,6 +96,61 @@ public class KeycloakAdminClientImpl implements KeycloakAdminClient {
             log.warn("Keycloak rechazó el alta del usuario {} con estado {}", mail,
                     excepcion.getStatusCode().value());
             throw new ServicioNoDisponibleException("No se pudo crear el usuario en Keycloak");
+        } catch (RestClientException excepcion) {
+            throw new ServicioNoDisponibleException("No se pudo conectar con Keycloak");
+        }
+    }
+
+    @Override
+    public Optional<String> buscarSubPorMail(String mail) {
+        try {
+            List<UsuarioKeycloakResumen> usuarios = restClient.get()
+                    .uri(baseUrl + "/users?username={mail}&exact=true", mail)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + obtenerToken())
+                    .retrieve()
+                    .body(new org.springframework.core.ParameterizedTypeReference<List<UsuarioKeycloakResumen>>() {
+                    });
+
+            if (usuarios == null || usuarios.isEmpty()) {
+                return Optional.empty();
+            }
+            return Optional.ofNullable(usuarios.getFirst().id());
+        } catch (RestClientResponseException excepcion) {
+            log.warn("Keycloak rechazó la búsqueda del usuario {} con estado {}", mail,
+                    excepcion.getStatusCode().value());
+            throw new ServicioNoDisponibleException("No se pudo buscar el usuario en Keycloak");
+        } catch (RestClientException excepcion) {
+            throw new ServicioNoDisponibleException("No se pudo conectar con Keycloak");
+        }
+    }
+
+    @Override
+    public void prepararUsuarioParaPruebas(String sub, String clave) {
+        try {
+            // El endpoint dev necesita que el usuario no quede obligado a cambiar
+            // la clave para poder obtener el token con password grant.
+            restClient.put()
+                    .uri(baseUrl + "/users/" + sub)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + obtenerToken())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of("requiredActions", List.of(), "emailVerified", true,
+                            "enabled", true))
+                    .retrieve()
+                    .toBodilessEntity();
+
+            restClient.put()
+                    .uri(baseUrl + "/users/" + sub + "/reset-password")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + obtenerToken())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of("type", "password", "value", clave, "temporary", false))
+                    .retrieve()
+                    .toBodilessEntity();
+
+            log.info("Usuario preparado para pruebas sub={}", sub);
+        } catch (RestClientResponseException excepcion) {
+            log.warn("Keycloak rechazó la preparación del usuario {} con estado {}", sub,
+                    excepcion.getStatusCode().value());
+            throw new ServicioNoDisponibleException("No se pudo preparar el usuario de prueba en Keycloak");
         } catch (RestClientException excepcion) {
             throw new ServicioNoDisponibleException("No se pudo conectar con Keycloak");
         }
@@ -181,6 +237,9 @@ public class KeycloakAdminClientImpl implements KeycloakAdminClient {
         } catch (RestClientException excepcion) {
             throw new ServicioNoDisponibleException("No se pudo obtener el token de servicio de Keycloak");
         }
+    }
+
+    private record UsuarioKeycloakResumen(String id) {
     }
 
     private record TokenKeycloak(String accessToken, Instant expiraEn) {

@@ -39,6 +39,7 @@ public class SeguridadConfig {
                                 "/api/*/swagger-ui/**")
                         .permitAll()
 
+                        .pathMatchers(HttpMethod.POST, "/api/catedra/dev/seed-e1").hasRole(JEFE_CATEDRA)
                         .pathMatchers(HttpMethod.POST, "/api/catedra/cursos-lectivos").hasRole(JEFE_CATEDRA)
                         .pathMatchers(HttpMethod.GET, "/api/catedra/cursos-lectivos").hasAnyRole(JEFE_CATEDRA, DOCENTE)
                         .pathMatchers(HttpMethod.POST, "/api/catedra/comisiones").hasRole(JEFE_CATEDRA)

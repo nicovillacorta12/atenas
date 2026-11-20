@@ -145,6 +145,37 @@ class KeycloakAdminClientTest {
         server.verify();
     }
 
+    @Test
+    @DisplayName("Busca el sub por mail en Keycloak")
+    void deberiaBuscarSubPorMail_cuandoExisteElUsuario() {
+        esperarToken();
+        server.expect(once(), requestTo(BASE_URL + "/users?username=docente%40atenas.local&exact=true"))
+                .andExpect(method(HttpMethod.GET))
+                .andExpect(header("Authorization", "Bearer token-servicio"))
+                .andRespond(withSuccess(
+                        "[{\"id\":\"sub-123\",\"username\":\"docente@atenas.local\"}]",
+                        MediaType.APPLICATION_JSON));
+
+        assertEquals("sub-123", cliente.buscarSubPorMail("docente@atenas.local").orElseThrow());
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("Prepara un usuario de prueba sin acciones pendientes")
+    void deberiaPrepararUsuarioParaPruebas() {
+        esperarToken();
+        server.expect(once(), requestTo(BASE_URL + "/users/sub-123"))
+                .andExpect(method(HttpMethod.PUT))
+                .andRespond(withStatus(HttpStatus.NO_CONTENT));
+        server.expect(once(), requestTo(BASE_URL + "/users/sub-123/reset-password"))
+                .andExpect(method(HttpMethod.PUT))
+                .andRespond(withStatus(HttpStatus.NO_CONTENT));
+
+        cliente.prepararUsuarioParaPruebas("sub-123", "clave");
+
+        server.verify();
+    }
+
     private void esperarToken() {
         server.expect(once(), requestTo(TOKEN_URI))
                 .andExpect(method(HttpMethod.POST))

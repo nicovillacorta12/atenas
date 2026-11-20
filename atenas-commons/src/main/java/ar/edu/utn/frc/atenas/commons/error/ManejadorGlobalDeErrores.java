@@ -12,8 +12,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.net.URI;
 import java.util.Comparator;
@@ -63,6 +65,25 @@ public class ManejadorGlobalDeErrores {
                 DETALLE_VALIDACION, solicitud);
         problema.setProperty("errores", errores);
         return ResponseEntity.badRequest().body(problema);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ProblemDetail> manejarParametroFaltante(
+            MissingServletRequestParameterException excepcion,
+            HttpServletRequest solicitud) {
+        // Un query param faltante es un error del cliente, no un 500.
+        ProblemDetail problema = problema(HttpStatus.BAD_REQUEST, "Solicitud inválida",
+                "Falta el parámetro requerido: " + excepcion.getParameterName(), solicitud);
+        return ResponseEntity.badRequest().body(problema);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ProblemDetail> manejarRecursoNoEncontrado(
+            NoResourceFoundException excepcion,
+            HttpServletRequest solicitud) {
+        ProblemDetail problema = problema(HttpStatus.NOT_FOUND, "No encontrado",
+                "No existe el recurso solicitado", solicitud);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problema);
     }
 
     @ExceptionHandler(AccessDeniedException.class)

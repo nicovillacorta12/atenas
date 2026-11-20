@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Acceso a las comisiones habilitadas en cada curso lectivo. Las consultas
@@ -14,6 +15,8 @@ import java.util.List;
 public interface ComisionLectivaRepository extends JpaRepository<ComisionLectiva, Long> {
 
     boolean existsByComisionIdAndCursoLectivoId(Long comisionId, Long cursoLectivoId);
+
+    Optional<ComisionLectiva> findByComisionIdAndCursoLectivoId(Long comisionId, Long cursoLectivoId);
 
     @EntityGraph(attributePaths = {"comision", "cursoLectivo"})
     List<ComisionLectiva> findByCursoLectivoId(Long cursoLectivoId);

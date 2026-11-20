@@ -13,5 +13,7 @@ public interface DocenteRepository extends JpaRepository<Docente, Long> {
 
     boolean existsByMail(String mail);
 
+    Optional<Docente> findByMail(String mail);
+
     Optional<Docente> findBySub(String sub);
 }

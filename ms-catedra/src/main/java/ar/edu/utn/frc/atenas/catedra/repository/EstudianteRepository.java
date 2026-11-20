@@ -16,6 +16,8 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
 
     boolean existsByLegajo(String legajo);
 
+    Optional<Estudiante> findByLegajo(String legajo);
+
     boolean existsByUsuarioGithub(String usuarioGithub);
 
     @EntityGraph(attributePaths = {

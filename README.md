@@ -38,8 +38,8 @@ JDK 21, Maven 3.9, Docker Desktop (Compose v2). Credenciales: token de GitHub y 
    - `Token integrante` → `400002@sistemas.frc.utn.edu.ar` → `token-integrante`
    - `Token alumno B` → `400003@sistemas.frc.utn.edu.ar` → `token-alumno-b`
    Cada usuario nuevo inicia sesión con `CLAVE_TEMPORAL` y Keycloak le pide cambiarla. Cerrá la sesión de Keycloak entre un usuario y otro para no reutilizar el token anterior.
-6. **(d) Orden de ejecución:** `02 Equipos → 03 Calendario y repositorio → 04 Proceso principal → 05 Consultas del alumno → 06 Reglas de dominio → 07 Negativos → 08 Fallas controladas`.
-   - `05` usa `token-alumno-b`; conviene ejecutarla antes de `06` y `07`, cuando el alumno B todavía no tiene equipo.
+6. **(d) Orden de ejecución:** `02 Equipos → 03 Calendario y repositorio → 04 Proceso principal → 05 Consultas del alumno → 07 Negativos → 06 Reglas de dominio → 08 Fallas controladas`.
+   - `05` y `07` usan `token-alumno-b`; hay que ejecutarlas antes de `06`, cuando el alumno B todavía no tiene equipo. Si se ejecuta `06` primero, `07` recibe `409` por equipo no asegurado en lugar del `403` esperado.
    - `03` y `04` requieren que los endpoints correspondientes estén implementados en los servicios.
 7. Los access tokens vencen a las **4 horas** (`accessTokenLifespan` del realm de desarrollo). Si una request devuelve `401`, regenerá el token desde `00 Tokens` y actualizá su variable.
 8. Para que Keycloak tome el cambio de `accessTokenLifespan`, recreá el volumen:
@@ -50,16 +50,32 @@ JDK 21, Maven 3.9, Docker Desktop (Compose v2). Credenciales: token de GitHub y 
    Eso borra la base y los usuarios: hay que volver a ejecutar `01` y regenerar todos los tokens.
 9. `00 Smoke` es opcional. Sus dos primeras requests no llevan token; la tercera usa `token-jefe`.
 
-### Preparación manual para `08 Fallas controladas`
+### Atajo para E1 y todos los tokens
 
-- **Drive:** completar `driveEnlace` con un archivo público válido. Para probar cambios posteriores, editar el archivo antes de ejecutar `D06 Archivo modificado en Drive`.
-- **GitHub:** completar `githubUsuario`, `githubRepositorio` y `githubRama`. Para la falla de `S08`, reiniciar `ms-seguimiento` con un `GITHUB_TOKEN` inválido.
-- **Servicio pausado:** ejecutar `docker compose pause ms-documentacion` antes de las requests de dashboard degradado y `docker compose unpause ms-documentacion` al terminar.
-- **ms-catedra caído:** ejecutar `docker compose pause ms-catedra` antes de la request que espera `503` y `docker compose unpause ms-catedra` al terminar.
+Después de obtener `token-jefe`, se puede ejecutar `00 Tokens → Seed E1 + todos los tokens`. Esa request:
+
+- Hace la carpeta `01 Estructura y Usuarios` completa.
+- Deja cargados los IDs y los JWT en el environment.
+- Permite saltear `01` y seguir directamente con `02`.
+
+El endpoint es `POST /api/catedra/dev/seed-e1` y requiere el JWT de jefe. El seed es idempotente: si los datos ya existen, los reutiliza.
+
+### `08 Fallas controladas`
+
+La colección agrega automáticamente la cabecera `X-Simular-Falla` en las requests de esta carpeta. Los servicios simulan la falla correspondiente sin pausar contenedores ni reiniciar `ms-seguimiento`:
+
+- `X-Simular-Falla: github`: fuerza un fallo de GitHub y degrada el hito vigente.
+- `X-Simular-Falla: ms-documentacion`: simula la caída de documentación y activa la degradación RN33.
+- `X-Simular-Falla: ms-catedra`: simula la caída de catedra y permite verificar los `503`.
+
+También funcionan las pruebas reales con `docker compose pause` y reinicio con token inválido, pero no son necesarias para ejecutar la carpeta desde Postman.
+
+- **Drive:** el environment trae un PDF público de ejemplo en `driveEnlace`. Para probar `modificadoPostEntrega=SI`, reemplazalo por un archivo propio y editá ese archivo antes de ejecutar `D06 Archivo modificado en Drive`.
+- La carpeta `04` crea el hito `Sprint vigente` y guarda `hitoVigenteId`; las pruebas de token inválido validan ese hito, porque el Sprint 1 de mayo ya está cerrado y se omite.
 
 La colección cubre todas las rutas documentadas en `docs/06`. Si una ruta todavía no está implementada en el servicio, la request fallará con `404`; eso debe reportarse, no ocultarse.
 
-El environment no contiene claves ni tokens: solo URLs, IDs vacíos, variables de token vacías y datos de Drive/GitHub marcados como `completar`. Los tokens se pegan en **Current Value** y no se versionan.
+El environment no contiene claves ni tokens: solo URLs, IDs vacíos, variables de token vacías y datos de Drive/GitHub de ejemplo. Los tokens se pegan en **Current Value** y no se versionan.
 
 ## Documentación
 Empezar por [`docs/README.md`](docs/README.md).

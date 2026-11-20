@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class KeycloakProperties {
 
     private String claveTemporal;
+    private String jefePasswordInicial;
     private Admin admin = new Admin();
 
     public String getClaveTemporal() {
@@ -20,6 +21,14 @@ public class KeycloakProperties {
 
     public void setClaveTemporal(String claveTemporal) {
         this.claveTemporal = claveTemporal;
+    }
+
+    public String getJefePasswordInicial() {
+        return jefePasswordInicial;
+    }
+
+    public void setJefePasswordInicial(String jefePasswordInicial) {
+        this.jefePasswordInicial = jefePasswordInicial;
     }
 
     public Admin getAdmin() {

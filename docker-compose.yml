@@ -78,6 +78,7 @@ services:
       CATEDRA_DB_PASSWORD: ${CATEDRA_DB_PASSWORD}
       KC_CATEDRA_ADMIN_SECRET: ${KC_CATEDRA_ADMIN_SECRET}
       CLAVE_TEMPORAL: ${CLAVE_TEMPORAL}
+      JEFE_PASSWORD_INICIAL: ${JEFE_PASSWORD_INICIAL}
     depends_on:
       postgres:
         condition: service_healthy

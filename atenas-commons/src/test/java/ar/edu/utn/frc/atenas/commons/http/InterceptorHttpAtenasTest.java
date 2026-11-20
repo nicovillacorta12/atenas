@@ -11,10 +11,13 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.client.MockClientHttpRequest;
 import org.springframework.mock.http.client.MockClientHttpResponse;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.net.SocketTimeoutException;
 import java.net.URI;
@@ -29,6 +32,7 @@ class InterceptorHttpAtenasTest {
     @AfterEach
     void limpiar() {
         SecurityContextHolder.clearContext();
+        RequestContextHolder.resetRequestAttributes();
         MDC.clear();
     }
 
@@ -87,5 +91,20 @@ class InterceptorHttpAtenasTest {
         assertThatThrownBy(() -> interceptor.intercept(solicitud, new byte[0], (pedido, cuerpo) -> {
             throw new ResourceAccessException("sin conexión", new SocketTimeoutException("timeout"));
         })).isInstanceOf(ServicioNoDisponibleException.class);
+    }
+
+    @Test
+    @DisplayName("Simula el timeout cuando la cabecera de prueba coincide con el host")
+    void deberiaSimularFalla_cuandoLaCabeceraCoincideConElHost() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(InterceptorHttpAtenas.CABECERA_SIMULAR_FALLA, "ms-catedra");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        MockClientHttpRequest solicitud = new MockClientHttpRequest(HttpMethod.GET,
+                URI.create("http://ms-catedra:8080/internal/cursos-lectivos/1"));
+
+        assertThatThrownBy(() -> interceptor.intercept(solicitud, new byte[0],
+                (pedido, cuerpo) -> new MockClientHttpResponse(new byte[0], HttpStatus.OK)))
+                .isInstanceOf(SocketTimeoutException.class);
     }
 }

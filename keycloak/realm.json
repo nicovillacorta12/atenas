@@ -56,6 +56,19 @@
       "fullScopeAllowed": true
     },
     {
+      "clientId": "atenas-dev-tokens",
+      "name": "Tokens de prueba",
+      "description": "Cliente público para que el seed de Postman obtenga JWT de usuarios de prueba.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true
+    },
+    {
       "clientId": "atenas-catedra-admin",
       "name": "Administrador de usuarios de ms-catedra",
       "description": "Cliente confidencial de ms-catedra para administrar usuarios y asignar roles.",

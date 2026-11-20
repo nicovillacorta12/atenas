@@ -4,9 +4,11 @@ import ar.edu.utn.frc.atenas.commons.error.NoEncontradoException;
 import ar.edu.utn.frc.atenas.commons.error.ServicioNoDisponibleException;
 import ar.edu.utn.frc.atenas.commons.error.SolicitudInvalidaException;
 import ar.edu.utn.frc.atenas.commons.http.AtenasHttpProperties;
+import ar.edu.utn.frc.atenas.commons.http.InterceptorHttpAtenas;
 import ar.edu.utn.frc.atenas.seguimiento.config.GitHubProperties;
 import ar.edu.utn.frc.atenas.seguimiento.exception.RepositorioNoAccesibleException;
 import ar.edu.utn.frc.atenas.seguimiento.exception.RespuestaInesperadaException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,9 +18,12 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.client.RequestMatcher;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -56,6 +61,21 @@ class GitHubRestClientTest {
         RestClient.Builder builder = GitHubRestClient.construirBuilder(propiedades, new AtenasHttpProperties());
         servidor = MockRestServiceServer.bindTo(builder).build();
         cliente = new GitHubRestClient(builder.build());
+    }
+
+    @AfterEach
+    void limpiarContexto() {
+        RequestContextHolder.resetRequestAttributes();
+    }
+
+    @Test
+    @DisplayName("Simula una falla de GitHub cuando la cabecera de prueba lo indica")
+    void deberiaSimularFallaGithub_cuandoLaCabeceraEstaPresente() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(InterceptorHttpAtenas.CABECERA_SIMULAR_FALLA, "github");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        assertThrows(ServicioNoDisponibleException.class, this::listar);
     }
 
     // ---------------------------------------------------------------- utilidades
